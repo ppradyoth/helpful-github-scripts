@@ -1,33 +1,34 @@
 # 🛠️ Helpful GitHub Scripts
 
-A curated collection of highly robust, custom-built shell and Node/Python automation scripts to supercharge your GitHub Profile, automate Projects boards management, dynamic README synchronization, and open-source contribution logs tracking.
+A curated collection of highly robust, custom-built Node/Python automation scripts to supercharge your GitHub Profile, automate multiple Projects boards management, dynamic README synchronization, and open-source contribution logs tracking.
 
 ---
 
 ## 📋 Table of Contents
-1. [generate-projects-board.sh](#1-generate-projects-boardsh)
+1. [auto-classify-projects.js](#1-auto-classify-projectsjs)
 2. [sync-profile-readme.js](#2-sync-profile-readmejs)
 3. [oss-contributor-log.py](#3-oss-contributor-logpy)
 
 ---
 
-## 1. `generate-projects-board.sh`
-> **Automate and populate highly detailed, categorized custom boards on your GitHub Profile Projects tab.**
+## 1. `auto-classify-projects.js`
+> **Automate and populate 7 dedicated, categorized custom boards on your GitHub Profile Projects tab.**
 
-This script interfaces directly with the GitHub CLI (`gh`) and a native inline Node parser to programmatically reset, create, and organize project boards. It structures items using a granular custom single-select column system.
+This script interfaces directly with the GitHub CLI (`gh`) and the GitHub GraphQL API to programmatically list, create, and organize repositories across **7 separate dedicated project boards** (AI Security, Gen AI, Traditional ML, Biocomputing, Open Source, College Projects, and Enterprise Stealth).
 
 ### ⚡ Key Features:
-* **Clean Slate Automations**: Automatically lists and safely deletes existing items before populating to avoid duplicates on execution retries.
-* **Custom Single-Select Field Assignment**: Creates and populates fields like `Category V2` and maps items into custom columns (`AI Security`, `Gen AI`, `Traditional ML`, `Biocomputing`, `Open Source Contributions`, etc.).
-* **Rich Markdown Formatting**: Injects cards containing bulleted features, tech stack tags, highlights, and quick-links.
+* **Dynamic Board Provisioning**: Checks your profile and automatically provisions any missing boards from the 7 target categories.
+* **Auto-Classification Engine**: Implements a heuristics-driven classifier using repository names, descriptions, and fork flags to map any repository instantly.
+* **Zero Duplication**: Queries existing items on each board, skipping populated repos and keeping existing configs safe.
+* **Progress Tracking**: Sets default and active statuses (`Done` / `In Progress`) for all cards.
 
 ### 🚀 Usage:
 ```bash
 # Grant project permissions if needed
 gh auth refresh -s project
 
-# Execute the board creation script
-bash generate-projects-board.sh
+# Execute the board creation and sync script
+node auto-classify-projects.js
 ```
 
 ---

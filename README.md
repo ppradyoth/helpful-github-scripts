@@ -85,6 +85,7 @@ A zero-dependency Node script that reads a Markdown file, extracts its headings,
 * **GitHub-accurate slugs**: Mirrors GitHub's real anchor algorithm — punctuation stripped, spaces hyphenated without collapsing, duplicate headings disambiguated (`#getting-started`, `#getting-started-1`). The links work, not just look like they should.
 * **Code-fence aware**: Skips `#` lines inside fenced code blocks (```` ``` ```` / `~~~`), so a commented shell command never sneaks into your TOC.
 * **Idempotent `--write`**: Updates the block between `<!-- TOC -->` and `<!-- /TOC -->` in place. Run it on every commit — it replaces, never duplicates. No markers? It drops them in right after your H1.
+* **CI-friendly `--check`**: Verifies the TOC is current without touching the file. Exit `0` (up to date), `1` (stale — run `--write`), or `2` (no markers). Drop it in a CI step or pre-commit hook so a forgotten TOC update fails the build.
 * **Level control**: `--min-level` / `--max-level` to skip the H1 title and ignore deep sub-headings.
 * **Zero dependencies**: Pure Node `fs`. Nothing to install.
 
@@ -98,9 +99,12 @@ node markdown-toc.js README.md --write
 
 # Only H2 and H3
 node markdown-toc.js docs/guide.md --min-level 2 --max-level 3 --write
+
+# CI / pre-commit: fail if the TOC is stale (exit 1), missing markers (exit 2), else pass (exit 0)
+node markdown-toc.js README.md --check
 ```
 
-Add `<!-- TOC -->` and `<!-- /TOC -->` where you want it, then wire `--write` into a pre-commit hook to keep it fresh automatically.
+Add `<!-- TOC -->` and `<!-- /TOC -->` where you want it, then wire `--write` into a pre-commit hook to keep it fresh automatically — or `--check` into CI so a stale TOC fails the build.
 
 ### 📦 Reusable functions:
 The script also exports its internals (`slugify`, `extractHeadings`, `buildToc`, `injectToc`) so you can `require()` it in your own tooling.

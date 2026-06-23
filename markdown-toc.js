@@ -35,6 +35,8 @@ Usage:
 Options:
   --write              Inject/update the TOC between ${START_MARKER} and ${END_MARKER}
                        markers in the file (added near the top if no markers exist).
+  --check              Don't modify anything. Exit 0 if the TOC block is up to date,
+                       1 if it's stale, 2 if no TOC markers exist. CI / pre-commit friendly.
   --min-level <n>      Shallowest heading level to include (default: 2 — skips the H1 title).
   --max-level <n>      Deepest heading level to include (default: 4).
   --help               Show this help.
@@ -42,6 +44,7 @@ Options:
 Examples:
   node markdown-toc.js README.md
   node markdown-toc.js README.md --write
+  node markdown-toc.js README.md --check       # fails CI if the TOC is out of date
   node markdown-toc.js docs/guide.md --min-level 2 --max-level 3 --write
 `);
 }
@@ -141,11 +144,12 @@ function injectToc(markdown, toc) {
 }
 
 function parseArgs(argv) {
-  const args = { file: null, write: false, minLevel: 2, maxLevel: 4, help: false };
+  const args = { file: null, write: false, check: false, minLevel: 2, maxLevel: 4, help: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--help' || a === '-h') args.help = true;
     else if (a === '--write') args.write = true;
+    else if (a === '--check') args.check = true;
     else if (a === '--min-level') args.minLevel = parseInt(argv[++i], 10);
     else if (a === '--max-level') args.maxLevel = parseInt(argv[++i], 10);
     else if (!a.startsWith('-') && args.file === null) args.file = a;
@@ -180,6 +184,20 @@ function main() {
   }
 
   const toc = buildToc(headings);
+
+  if (args.check) {
+    const hasMarkers = markdown.includes(START_MARKER) && markdown.includes(END_MARKER);
+    if (!hasMarkers) {
+      console.error(`✗ ${args.file}: no TOC markers found. Add ${START_MARKER} / ${END_MARKER} or run with --write.`);
+      process.exit(2);
+    }
+    if (injectToc(markdown, toc) === markdown) {
+      console.error(`✓ ${args.file}: TOC is up to date.`);
+      process.exit(0);
+    }
+    console.error(`✗ ${args.file}: TOC is out of date. Run: node markdown-toc.js ${args.file} --write`);
+    process.exit(1);
+  }
 
   if (args.write) {
     const updated = injectToc(markdown, toc);

@@ -8,6 +8,7 @@ A curated collection of highly robust, custom-built Node/Python automation scrip
 1. [auto-classify-projects.js](#1-auto-classify-projectsjs)
 2. [sync-profile-readme.js](#2-sync-profile-readmejs)
 3. [oss-contributor-log.py](#3-oss-contributor-logpy)
+4. [markdown-toc.js](#4-markdown-tocjs)
 
 ---
 
@@ -72,6 +73,37 @@ python3 oss-contributor-log.py add '{"repo": "garak", "issue_number": 12, "issue
 # View all logged entries
 python3 oss-contributor-log.py show
 ```
+
+---
+
+## 4. `markdown-toc.js`
+> **Generate a GitHub-accurate table of contents from any Markdown file's headings.**
+
+A zero-dependency Node script that reads a Markdown file, extracts its headings, and builds a table of contents with anchor links that actually resolve on GitHub. Print it to stdout, or inject it straight into the file between `<!-- TOC -->` markers.
+
+### ⚡ Key Features:
+* **GitHub-accurate slugs**: Mirrors GitHub's real anchor algorithm — punctuation stripped, spaces hyphenated without collapsing, duplicate headings disambiguated (`#getting-started`, `#getting-started-1`). The links work, not just look like they should.
+* **Code-fence aware**: Skips `#` lines inside fenced code blocks (```` ``` ```` / `~~~`), so a commented shell command never sneaks into your TOC.
+* **Idempotent `--write`**: Updates the block between `<!-- TOC -->` and `<!-- /TOC -->` in place. Run it on every commit — it replaces, never duplicates. No markers? It drops them in right after your H1.
+* **Level control**: `--min-level` / `--max-level` to skip the H1 title and ignore deep sub-headings.
+* **Zero dependencies**: Pure Node `fs`. Nothing to install.
+
+### 🚀 Usage:
+```bash
+# Print a TOC to stdout (default: levels 2–4, skipping the H1 title)
+node markdown-toc.js README.md
+
+# Inject/update the TOC block inside the file
+node markdown-toc.js README.md --write
+
+# Only H2 and H3
+node markdown-toc.js docs/guide.md --min-level 2 --max-level 3 --write
+```
+
+Add `<!-- TOC -->` and `<!-- /TOC -->` where you want it, then wire `--write` into a pre-commit hook to keep it fresh automatically.
+
+### 📦 Reusable functions:
+The script also exports its internals (`slugify`, `extractHeadings`, `buildToc`, `injectToc`) so you can `require()` it in your own tooling.
 
 ---
 

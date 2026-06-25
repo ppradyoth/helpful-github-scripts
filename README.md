@@ -9,6 +9,7 @@ A curated collection of highly robust, custom-built Node/Python automation scrip
 2. [sync-profile-readme.js](#2-sync-profile-readmejs)
 3. [oss-contributor-log.py](#3-oss-contributor-logpy)
 4. [markdown-toc.js](#4-markdown-tocjs)
+5. [link-check.js](#5-link-checkjs)
 
 ---
 
@@ -108,6 +109,44 @@ Add `<!-- TOC -->` and `<!-- /TOC -->` where you want it, then wire `--write` in
 
 ### 📦 Reusable functions:
 The script also exports its internals (`slugify`, `extractHeadings`, `buildToc`, `injectToc`) so you can `require()` it in your own tooling.
+
+---
+
+## 5. `link-check.js`
+> **Find broken local links in Markdown before they embarrass you in a README.**
+
+A zero-dependency Node script that catches the two link failures README maintainers hit most: relative file links pointing at a path that no longer exists, and in-page `#anchor` links to a heading you renamed or deleted. It validates anchors with GitHub's real slug algorithm — the same one `markdown-toc.js` uses — so `#section` links resolve exactly the way they will on github.com.
+
+### ⚡ Key Features:
+* **Dead-file detection**: Resolves every relative `[text](path)` and `![alt](path)` against the filesystem (relative to the Markdown file itself) and flags anything missing. Handles URL-encoded paths and `file.md#fragment` forms.
+* **Anchor validation**: For `#anchor` links — both same-file and `other.md#anchor` — it builds the target file's heading slugs and confirms the anchor actually exists. Also honors explicit `<a name="...">` / `id="..."` anchors.
+* **No false positives from code**: Links inside fenced code blocks (```` ``` ````/`~~~`) and inline `` `code spans` `` are ignored, so a sample command never reads as a broken link.
+* **Network-free by default**: External URLs (`http`, `https`, `mailto`, `tel`) are never fetched — the check is deterministic and safe for CI. Pass `--external` to list them for a manual eyeball.
+* **CI / pre-commit ready**: Exit `0` (all local links resolve), `1` (broken links found), or `2` (usage error). Multiple files per run.
+* **Zero dependencies**: Pure Node `fs` + `path`.
+
+### 🚀 Usage:
+```bash
+# Check one file
+node link-check.js README.md
+
+# Check several at once
+node link-check.js README.md docs/*.md
+
+# Also list external URLs (never fetched, just printed)
+node link-check.js README.md --external
+
+# Machine-readable report
+node link-check.js README.md --json
+
+# CI: fail the build on any broken link
+node link-check.js README.md docs/guide.md
+```
+
+Pairs naturally with `markdown-toc.js`: generate the TOC, then verify every link in it (and everywhere else) still resolves. Wire both into a pre-commit hook and your docs stop rotting.
+
+### 📦 Reusable functions:
+Exports `slugify`, `cleanText`, `parseMarkdown`, `classify`, and `checkFile` for use in your own tooling via `require()`.
 
 ---
 

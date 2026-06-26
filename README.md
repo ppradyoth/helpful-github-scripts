@@ -150,5 +150,36 @@ Exports `slugify`, `cleanText`, `parseMarkdown`, `classify`, and `checkFile` for
 
 ---
 
+## 🔁 Wire the docs checks into CI / pre-commit
+
+`link-check.js` and `markdown-toc.js` are most useful when they run automatically — so docs rot
+fails a build instead of sitting unnoticed. The [`examples/`](examples/) folder has copy-paste
+artifacts for both:
+
+| File | What it is | How to use |
+|------|-----------|-----------|
+| [`examples/check-docs.sh`](examples/check-docs.sh) | One command that link-checks every tracked Markdown file (and, opt-in, verifies marker-based TOCs). Exit `0`/`1`. | `bash examples/check-docs.sh` |
+| [`examples/docs-check.yml`](examples/docs-check.yml) | GitHub Actions workflow — runs the checks on every push/PR that touches Markdown. | Copy to `.github/workflows/docs-check.yml` |
+| [`examples/git-pre-commit`](examples/git-pre-commit) | Pre-commit hook — blocks a commit that introduces a broken link (checks only staged Markdown). | `cp examples/git-pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit` |
+
+```bash
+# Try it right now, on this repo:
+bash examples/check-docs.sh
+# → Checking links in N Markdown file(s)…
+# ✓ All docs checks passed.
+```
+
+To also verify a marker-based table of contents, list the files that use `<!-- TOC -->` markers:
+
+```bash
+TOC_FILES="README.md docs/guide.md" bash examples/check-docs.sh
+```
+
+> **Note:** the TOC check is opt-in per file because `markdown-toc.js --check` keys off the literal
+> `<!-- TOC -->` markers — a doc that only *mentions* those strings in prose (like this README) would
+> read as having a TOC it doesn't. `link-check.js` has no such caveat and runs on everything.
+
+---
+
 ## 📜 License
 MIT — Do whatever you want with these scripts!

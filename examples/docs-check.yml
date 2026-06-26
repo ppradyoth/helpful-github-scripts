@@ -1,0 +1,32 @@
+# Example GitHub Actions workflow: fail the build when docs links rot.
+#
+# Drop this in your repo at .github/workflows/docs-check.yml. It runs on every push and PR
+# that touches Markdown, checks all local links + anchors with link-check.js, and (optionally)
+# verifies any marker-based table of contents is current.
+#
+# Adjust the `cp` step to point at wherever you keep these scripts — vendored in your repo,
+# fetched from a release, or installed as a submodule. The example below assumes link-check.js
+# and markdown-toc.js sit at the repo root alongside examples/check-docs.sh.
+
+name: docs-check
+
+on:
+  push:
+    paths: ['**.md', '**.markdown']
+  pull_request:
+    paths: ['**.md', '**.markdown']
+
+jobs:
+  links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Runs link-check.js across every tracked Markdown file.
+      # Set TOC_FILES to also verify <!-- TOC --> blocks, e.g. TOC_FILES="README.md docs/guide.md".
+      - name: Check Markdown links
+        run: bash examples/check-docs.sh

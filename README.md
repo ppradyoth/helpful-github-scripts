@@ -10,6 +10,7 @@ A curated collection of highly robust, custom-built Node/Python automation scrip
 3. [oss-contributor-log.py](#3-oss-contributor-logpy)
 4. [markdown-toc.js](#4-markdown-tocjs)
 5. [link-check.js](#5-link-checkjs)
+6. [frontmatter-lint.js](#6-frontmatter-lintjs)
 
 ---
 
@@ -147,6 +148,39 @@ Pairs naturally with `markdown-toc.js`: generate the TOC, then verify every link
 
 ### 📦 Reusable functions:
 Exports `slugify`, `cleanText`, `parseMarkdown`, `classify`, and `checkFile` for use in your own tooling via `require()`.
+
+---
+
+## 6. `frontmatter-lint.js`
+> **Catch broken YAML frontmatter before it breaks your site build or your content tracker.**
+
+A zero-dependency Node script that lints the `---` frontmatter block at the top of Markdown files. It's the third leg of the docs-quality set (`link-check.js` for links, `markdown-toc.js` for the TOC, this for metadata) — built for content repos where a typo'd `date` or a `tags` field that's secretly a string silently breaks a static-site build or a posting pipeline.
+
+### ⚡ Key Features:
+* **Required-key checks**: Flags missing or empty keys (default `title,date`, configurable via `--require`). An empty `title: ""` fails too, not just an absent one.
+* **Type validation**: `--date-keys` must be a real `YYYY-MM-DD` calendar date (rejects `2026-13-45`); `--bool-keys` must be a true boolean (catches the classic `draft: "true"` string); `--list` keys must be an actual array (catches `tags: ai, llm` that should be `[ai, llm]`).
+* **Practical YAML subset**: Parses scalars, quoted strings, flow lists (`[a, b]`), block lists (`- item`), booleans, numbers, and dates. Duplicate keys, unterminated blocks, and unsupported nested maps are reported instead of silently mis-parsed.
+* **Whole-tree mode**: `--dir <path>` recursively lints every `.md`/`.markdown` file (skips `.git`/`node_modules`). `--allow-missing` lets files without frontmatter pass.
+* **CI / pre-commit ready**: Exit `0` (all clean), `1` (lint problems), or `2` (usage/IO error). `--json` for machine-readable output, `--quiet` to print only failures.
+* **Zero dependencies**: Pure Node `fs` + `path`. Network-free and deterministic.
+
+### 🚀 Usage:
+```bash
+# Lint one post
+node frontmatter-lint.js post.md
+
+# Lint a whole content directory with a custom required set
+node frontmatter-lint.js --dir blog --require title,date,tags,draft
+
+# Treat tags AND categories as lists; draft AND featured as booleans
+node frontmatter-lint.js post.md --list tags,categories --bool-keys draft,featured
+
+# CI: fail the build on any frontmatter problem
+node frontmatter-lint.js --dir content --require title,date --allow-missing
+```
+
+### 📦 Reusable functions:
+Exports `extractFrontmatter`, `parseFrontmatter`, `coerceScalar`, `isValidIsoDate`, and `lintFile` for use in your own tooling via `require()`.
 
 ---
 

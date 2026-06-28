@@ -11,6 +11,7 @@ A curated collection of highly robust, custom-built Node/Python automation scrip
 4. [markdown-toc.js](#4-markdown-tocjs)
 5. [link-check.js](#5-link-checkjs)
 6. [frontmatter-lint.js](#6-frontmatter-lintjs)
+7. [heading-lint.js](#7-heading-lintjs)
 
 ---
 
@@ -181,6 +182,42 @@ node frontmatter-lint.js --dir content --require title,date --allow-missing
 
 ### 📦 Reusable functions:
 Exports `extractFrontmatter`, `parseFrontmatter`, `coerceScalar`, `isValidIsoDate`, and `lintFile` for use in your own tooling via `require()`.
+
+---
+
+## 7. `heading-lint.js`
+> **Catch the heading-structure bugs that silently break your README's anchors and table of contents.**
+
+A zero-dependency Node script that lints the heading *structure* of Markdown files. It's the upstream companion to `link-check.js`: link-check tells you a `#anchor` is broken; heading-lint tells you **why** — almost always a duplicate heading or a skipped level. It uses the **same** GitHub slug algorithm and the **same** code-fence skipping as `markdown-toc.js` and `link-check.js`, so its idea of a "duplicate anchor" matches exactly what GitHub (and those tools) compute.
+
+### ⚡ Key Features:
+* **Duplicate-slug detection**: Two headings that resolve to the same GitHub anchor (e.g. two `## Setup`s). GitHub silently renames the second to `setup-1`, so a `[link](#setup)` lands on the wrong heading — the #1 cause of "the link looks right but jumps to the wrong place."
+* **Skipped-level detection**: Flags outline jumps like H2 → H4 (skipping H3) that break the document structure and most TOC generators.
+* **H1 hygiene**: Flags multiple H1s (`--allow-multiple-h1` to disable) and missing H1 (`--no-require-h1` to disable). `--require-h1` additionally requires the *first* heading to be the H1.
+* **Empty-heading detection**: Catches a bare marker (`## `) with no text.
+* **CI / pre-commit ready**: Exit `0` (clean), `1` (problems), `2` (usage/IO error). `--json` for machine-readable output, `--quiet` to print only failures.
+* **Zero dependencies**: Pure Node `fs`. Network-free and deterministic.
+
+### 🚀 Usage:
+```bash
+# Lint one file
+node heading-lint.js README.md
+
+# Lint several, machine-readable
+node heading-lint.js README.md docs/*.md --json
+
+# A partial/included doc that legitimately has no top-level H1
+node heading-lint.js CHANGELOG.md --no-require-h1
+
+# CI: fail the build on any heading problem
+node heading-lint.js README.md
+```
+
+### 🐕 Dogfood note (honest output):
+Run it on *this* README and it reports the repeated `⚡ Key Features:` / `🚀 Usage:` / `📦 Reusable functions:` subsection labels as `duplicate-slug`. That's the tool working correctly — those headings really do collide into the same anchors. They're harmless *here* only because the Table of Contents links to the numbered section titles (`#1-auto-classify-projectsjs`), never the bare labels. The moment anyone writes `[see usage](#-usage)`, it would resolve to the first one. The lesson the tool is teaching: decorative repeated headings are a latent anchor bug — make subsection headings unique if anything links to them.
+
+### 📦 Reusable functions:
+Exports `slugify`, `cleanText`, `extractHeadings`, and `lintHeadings` for use in your own tooling via `require()`.
 
 ---
 

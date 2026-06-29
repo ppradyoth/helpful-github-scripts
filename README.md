@@ -12,6 +12,7 @@ A curated collection of highly robust, custom-built Node/Python automation scrip
 5. [link-check.js](#5-link-checkjs)
 6. [frontmatter-lint.js](#6-frontmatter-lintjs)
 7. [heading-lint.js](#7-heading-lintjs)
+8. [table-fmt.js](#8-table-fmtjs)
 
 ---
 
@@ -218,6 +219,42 @@ Run it on *this* README and it reports the repeated `⚡ Key Features:` / `🚀 
 
 ### 📦 Reusable functions:
 Exports `slugify`, `cleanText`, `extractHeadings`, and `lintHeadings` for use in your own tooling via `require()`.
+
+---
+
+## 8. `table-fmt.js`
+> **`gofmt` for your Markdown tables — align every column so the raw source is readable and diffs stay clean.**
+
+A zero-dependency Node script that reformats GitHub-Flavored Markdown tables: it pads every column to an even width and rewrites the delimiter row to honor each column's alignment. The rendered HTML is unchanged — this only fixes the source whitespace, the single most tedious thing to maintain by hand after you edit a cell. It's the formatting companion to the lint family above: those tell you something is wrong; this one quietly fixes it.
+
+### ⚡ Key Features:
+* **Column alignment**: Pads each column to its widest cell (min width 3) and justifies body cells **left** (`:---`), **right** (`---:`), **center** (`:--:`), or default per the delimiter row.
+* **Ragged-row repair**: Pads short rows with empty cells and drops extras to the header's column count — exactly how GitHub renders a ragged table.
+* **Code-fence aware**: Tables inside fenced blocks (```` ``` ```` / `~~~`) are left untouched, using the same fence-skipping as the other scripts here.
+* **Idempotent**: Formatting twice produces byte-identical output — safe to run in a loop or a hook.
+* **CI / pre-commit ready**: `--check` exits `1` if any file isn't already formatted; `--write` fixes in place; `--json` for machine-readable reports. Reads stdin with `-`.
+* **Zero dependencies**: Pure Node `fs`. Network-free and deterministic.
+
+### 🚀 Usage:
+```bash
+# Print a formatted copy to stdout
+node table-fmt.js README.md
+
+# Rewrite files in place
+node table-fmt.js README.md docs/*.md --write
+
+# CI: fail if any table isn't aligned
+node table-fmt.js *.md --check
+
+# Pipe through it
+cat doc.md | node table-fmt.js -
+```
+
+### ⚠️ Honest limitation:
+Column width is measured in Unicode **code points**, not terminal display columns. Wide CJK characters and emoji take two cells in a monospace editor, so a table full of them can look slightly off even when the tool considers it aligned. ASCII tables — the common case — align exactly.
+
+### 📦 Reusable functions:
+Exports `splitCells`, `isDelimiterRow`, `alignmentOf`, `formatTables`, and `formatOneTable` for use in your own tooling via `require()`.
 
 ---
 

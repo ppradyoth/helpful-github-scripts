@@ -13,6 +13,7 @@ A curated collection of highly robust, custom-built Node/Python automation scrip
 6. [frontmatter-lint.js](#6-frontmatter-lintjs)
 7. [heading-lint.js](#7-heading-lintjs)
 8. [table-fmt.js](#8-table-fmtjs)
+9. [code-fence-lint.js](#9-code-fence-lintjs)
 
 ---
 
@@ -255,6 +256,46 @@ Column width is measured in Unicode **code points**, not terminal display column
 
 ### 📦 Reusable functions:
 Exports `splitCells`, `isDelimiterRow`, `alignmentOf`, `formatTables`, and `formatOneTable` for use in your own tooling via `require()`.
+
+---
+
+## 9. `code-fence-lint.js`
+> **Catch the unclosed code fence that silently turns the rest of your README into one grey blob.**
+
+A zero-dependency Node script that lints fenced code blocks in Markdown. Its headline catch is the **unclosed fence** — a ```` ``` ```` that opens but never closes, swallowing everything after it into a single code block on GitHub. It tracks fences the same way the rest of the lint family does, but goes deeper: it understands fence *length* and *character*, so a ```` ```` ```` (4-backtick) block legitimately containing ```` ``` ```` lines, and a ```` ``` ```` block containing `~~~` lines, are parsed correctly instead of false-flagged.
+
+### ⚡ Key Features:
+* **Unclosed-fence detection**: Flags any fence that opens but never closes before end of file — the #1 cause of "why is half my README a code block?" Always an error (exit `1`).
+* **Length & character aware**: A closing fence must use the **same** character (`` ` `` or `~`) and be **at least as long** as the opener. This makes longer outer fences (```` ```` ````) that wrap shorter inner fences (```` ``` ````) work, and catches the mismatched case where the only candidate closer was too short to actually close the block.
+* **Missing-language warnings**: An opening fence with no language tag (```` ``` ```` vs ```` ```js ````) is reported as a **warning** (no syntax highlighting). Promote it to an error with `--strict-language`, or silence it entirely with `--no-require-language`.
+* **Tildes too**: `~~~` fences are handled exactly like backtick fences, including the cross-character rule (a `~~~` line inside a ```` ``` ```` block is content, not a close).
+* **No false positives from inline code**: Only a line that *starts* (after ≤3 spaces, CommonMark-style) with a fence run counts — inline `` `code` `` is never mistaken for a fence. Fences inside list items work.
+* **CI / pre-commit ready**: Exit `0` (clean — warnings alone don't fail), `1` (errors), or `2` (usage/IO error). `--json` for machine-readable output, `--quiet` to print only failures.
+* **Zero dependencies**: Pure Node `fs`. Network-free and deterministic.
+
+### 🚀 Usage:
+```bash
+# Lint one file
+node code-fence-lint.js README.md
+
+# Lint several, machine-readable
+node code-fence-lint.js README.md docs/*.md --json
+
+# Make a missing language tag fail the build, not just warn
+node code-fence-lint.js README.md --strict-language
+
+# Don't care about language tags — only catch unclosed fences
+node code-fence-lint.js README.md --no-require-language
+
+# CI: fail the build on any unclosed/mismatched fence
+node code-fence-lint.js README.md
+```
+
+### ⚠️ Honest limitation:
+There's no full CommonMark block parser. A ```` ``` ```` that lives inside an *indented* (4-space) code block or an unusually-nested blockquote may be read as a real fence. The common cases — top-level fences and fences inside list items — are handled correctly.
+
+### 📦 Reusable functions:
+Exports `matchFence` and `lintFences` for use in your own tooling via `require()`.
 
 ---
 

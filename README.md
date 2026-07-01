@@ -14,6 +14,7 @@ A curated collection of highly robust, custom-built Node/Python automation scrip
 7. [heading-lint.js](#7-heading-lintjs)
 8. [table-fmt.js](#8-table-fmtjs)
 9. [code-fence-lint.js](#9-code-fence-lintjs)
+10. [image-alt-lint.js](#10-image-alt-lintjs)
 
 ---
 
@@ -296,6 +297,46 @@ There's no full CommonMark block parser. A ```` ``` ```` that lives inside an *i
 
 ### 📦 Reusable functions:
 Exports `matchFence` and `lintFences` for use in your own tooling via `require()`.
+
+---
+
+## 10. `image-alt-lint.js`
+> **The README picture that says nothing to a screen reader — or to Google Image search.**
+
+A zero-dependency Node script that lints **image alt text** in Markdown and inline HTML — the accessibility (and SEO) gap that no link checker or heading linter catches. `![](diagram.png)` renders a picture for sighted readers and *silence* for everyone using a screen reader; this finds those before they ship. It's the a11y companion to `link-check.js`: link-check tells you an image URL is dead, this tells you a *live* image has no usable description.
+
+### ⚡ Key Features:
+* **Missing & empty alt (errors)**: Flags `![](src)`, `![   ](src)` (whitespace-only), and `<img src=...>` with **no `alt` attribute at all** — the hard accessibility failures. Exit `1`.
+* **Weak alt (warnings)**: Catches alt text that's just a **filename** (`![diagram.png](diagram.png)`) or **placeholder boilerplate** (`image`, `photo`, `screenshot here`, `alt text`, `TODO`…). Promote warnings to errors with `--strict`.
+* **Markdown *and* HTML**: Handles `![alt](src)`, reference-style `![alt][ref]`, and `<img>` tags (single/double/bare-quoted attributes) — READMEs use all three.
+* **Knows decorative from broken**: A `<img>` with `role="presentation"`, `role="none"`, or `aria-hidden="true"` is skipped. With `--allow-empty`, an *explicitly* empty alt (`![]()` / `alt=""`, the WCAG decorative pattern) passes — but a totally **missing** `<img>` alt attribute still fails, because that's the real bug.
+* **No false positives**: Skips fenced code blocks (```` ``` ````/`~~~`) and inline `` `code` `` spans the same way the rest of the lint family does, so an image written *as an example* never trips it. Per-line opt-out with a trailing `<!-- alt-lint-ignore -->`.
+* **CI / pre-commit ready**: Exit `0` (no errors — warnings alone don't fail unless `--strict`), `1` (errors), or `2` (usage/IO error). `--json` for machine-readable output, `--quiet` to print only failures.
+* **Zero dependencies**: Pure Node `fs`. Network-free and deterministic.
+
+### 🚀 Usage:
+```bash
+# Lint one file
+node image-alt-lint.js README.md
+
+# Lint several, machine-readable
+node image-alt-lint.js README.md docs/*.md --json
+
+# Make weak alt text (filenames, placeholders) fail the build too
+node image-alt-lint.js README.md --strict
+
+# Treat explicit empty alt as decorative-ok (still fails a missing <img> alt)
+node image-alt-lint.js README.md --allow-empty
+
+# Only Markdown images, ignore <img> tags
+node image-alt-lint.js README.md --no-html
+```
+
+### ⚠️ Honest limitation:
+Images are matched per line, so a `<img>` tag split across multiple lines isn't fully parsed. The common cases — Markdown images and single-line `<img>` tags — are handled. Alt text containing a literal `]` can confuse the Markdown matcher (rare in practice).
+
+### 📦 Reusable functions:
+Exports `lintImages`, `classifyAlt`, `htmlAttr`, `basename`, and `stripInlineCode` for use in your own tooling via `require()`.
 
 ---
 

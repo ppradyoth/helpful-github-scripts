@@ -342,22 +342,39 @@ Exports `lintImages`, `classifyAlt`, `htmlAttr`, `basename`, and `stripInlineCod
 
 ## 🔁 Wire the docs checks into CI / pre-commit
 
-`link-check.js` and `markdown-toc.js` are most useful when they run automatically — so docs rot
-fails a build instead of sitting unnoticed. The [`examples/`](examples/) folder has copy-paste
-artifacts for both:
+The linters are most useful when they run automatically — so docs rot fails a build instead of
+sitting unnoticed. `examples/check-docs.sh` wires **all seven** into one command; the
+[`examples/`](examples/) folder has copy-paste artifacts to drop it into CI or a git hook:
 
 | File | What it is | How to use |
 |------|-----------|-----------|
-| [`examples/check-docs.sh`](examples/check-docs.sh) | One command that link-checks every tracked Markdown file (and, opt-in, verifies marker-based TOCs). Exit `0`/`1`. | `bash examples/check-docs.sh` |
+| [`examples/check-docs.sh`](examples/check-docs.sh) | One command that runs the whole suite over every tracked Markdown file — links, code fences, image alt text, and frontmatter by default; heading structure, table alignment, and marker-based TOCs opt-in. Exit `0`/`1`. | `bash examples/check-docs.sh` |
 | [`examples/docs-check.yml`](examples/docs-check.yml) | GitHub Actions workflow — runs the checks on every push/PR that touches Markdown. | Copy to `.github/workflows/docs-check.yml` |
 | [`examples/git-pre-commit`](examples/git-pre-commit) | Pre-commit hook — blocks a commit that introduces a broken link (checks only staged Markdown). | `cp examples/git-pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit` |
 
 ```bash
 # Try it right now, on this repo:
 bash examples/check-docs.sh
-# → Checking links in N Markdown file(s)…
+# → Linting N Markdown file(s)…
 # ✓ All docs checks passed.
 ```
+
+**Four checks run by default** — `link-check`, `code-fence-lint`, `image-alt-lint`, and
+`frontmatter-lint` (`--allow-missing`, so plain docs pass and only files that *have* frontmatter
+get validated). These fail only on genuine defects: a dead link, an unclosed fence, a missing
+`alt`, malformed frontmatter.
+
+**Two checks are opt-in** — `heading-lint` and `table-fmt --check` — because they can flag
+deliberate style (repeated sub-headings across sections, hand-aligned tables), not bugs. Turn them
+on for a strict pass:
+
+```bash
+CHECK_HEADINGS=1 CHECK_TABLES=1 bash examples/check-docs.sh
+```
+
+Every check is individually toggleable (`1` = run, `0` = skip):
+`CHECK_LINKS`, `CHECK_FENCES`, `CHECK_ALT`, `CHECK_FRONTMATTER`, `CHECK_HEADINGS`, `CHECK_TABLES`.
+For example, `CHECK_ALT=0 bash examples/check-docs.sh` skips the alt-text check.
 
 To also verify a marker-based table of contents, list the files that use `<!-- TOC -->` markers:
 
@@ -367,7 +384,7 @@ TOC_FILES="README.md docs/guide.md" bash examples/check-docs.sh
 
 > **Note:** the TOC check is opt-in per file because `markdown-toc.js --check` keys off the literal
 > `<!-- TOC -->` markers — a doc that only *mentions* those strings in prose (like this README) would
-> read as having a TOC it doesn't. `link-check.js` has no such caveat and runs on everything.
+> read as having a TOC it doesn't. The default checks have no such caveat and run on everything.
 
 ---
 

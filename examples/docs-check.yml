@@ -1,12 +1,12 @@
-# Example GitHub Actions workflow: fail the build when docs links rot.
+# Example GitHub Actions workflow: fail the build when docs rot.
 #
 # Drop this in your repo at .github/workflows/docs-check.yml. It runs on every push and PR
-# that touches Markdown, checks all local links + anchors with link-check.js, and (optionally)
-# verifies any marker-based table of contents is current.
+# that touches Markdown and calls examples/check-docs.sh, which runs the whole linter suite:
+# links + anchors, code fences, image alt text, and frontmatter by default; heading structure,
+# table alignment, and marker-based TOCs opt-in (see the toggles below).
 #
-# Adjust the `cp` step to point at wherever you keep these scripts — vendored in your repo,
-# fetched from a release, or installed as a submodule. The example below assumes link-check.js
-# and markdown-toc.js sit at the repo root alongside examples/check-docs.sh.
+# The example assumes the linter scripts sit at the repo root alongside examples/check-docs.sh.
+# If you keep them elsewhere, set SCRIPTS_DIR in the run step.
 
 name: docs-check
 
@@ -17,7 +17,7 @@ on:
     paths: ['**.md', '**.markdown']
 
 jobs:
-  links:
+  docs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -26,7 +26,11 @@ jobs:
         with:
           node-version: '20'
 
-      # Runs link-check.js across every tracked Markdown file.
-      # Set TOC_FILES to also verify <!-- TOC --> blocks, e.g. TOC_FILES="README.md docs/guide.md".
-      - name: Check Markdown links
+      # Runs the docs linter suite across every tracked Markdown file.
+      # Opt-in extras via env:
+      #   CHECK_HEADINGS=1  also lint heading structure (duplicate anchors, skipped levels)
+      #   CHECK_TABLES=1    also require GFM tables to be aligned
+      #   TOC_FILES="README.md docs/guide.md"   also verify <!-- TOC --> blocks
+      # Any default check can be turned off, e.g. CHECK_ALT=0.
+      - name: Check Markdown docs
         run: bash examples/check-docs.sh

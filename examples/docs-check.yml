@@ -2,8 +2,8 @@
 #
 # Drop this in your repo at .github/workflows/docs-check.yml. It runs on every push and PR
 # that touches Markdown and calls examples/check-docs.sh, which runs the whole linter suite:
-# links + anchors, code fences, image alt text, and frontmatter by default; heading structure,
-# table alignment, and marker-based TOCs opt-in (see the toggles below).
+# links + anchors, code fences, image alt text, frontmatter, and list consistency by default;
+# heading structure, table alignment, and marker-based TOCs opt-in (see the toggles below).
 #
 # The example assumes the linter scripts sit at the repo root alongside examples/check-docs.sh.
 # If you keep them elsewhere, set SCRIPTS_DIR in the run step.

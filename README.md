@@ -15,6 +15,7 @@ A curated collection of highly robust, custom-built Node/Python automation scrip
 8. [table-fmt.js](#8-table-fmtjs)
 9. [code-fence-lint.js](#9-code-fence-lintjs)
 10. [image-alt-lint.js](#10-image-alt-lintjs)
+11. [list-lint.js](#11-list-lintjs)
 
 ---
 
@@ -340,10 +341,46 @@ Exports `lintImages`, `classifyAlt`, `htmlAttr`, `basename`, and `stripInlineCod
 
 ---
 
+## 11. `list-lint.js`
+> **The bullet you switched from `-` to `*` mid-list, and the ordered list that jumps `1, 2, 4`.**
+
+A zero-dependency Node script that lints **Markdown list consistency** — the churn-and-render problems the other linters don't look at. Mixed bullet markers and a broken number sequence render *fine* on GitHub, so nobody notices until a formatter rewrites every marker and a one-line change shows up as a 40-line diff. This catches it first. It's the list-focused sibling of `code-fence-lint.js` and `table-fmt.js`: same fence-skipping, same CLI, same CI exit codes.
+
+### ⚡ Key Features:
+* **`inconsistent-bullet` (error)**: Within a single list, flags an unordered item whose marker (`-` / `*` / `+`) differs from the first one used at that level. Scoped to *one list block* — a repo that uses `-` in one section and `*` in another is never penalized; only mixing **within** a list is. (markdownlint MD004.)
+* **`ordered-numbering` (error)**: Flags an ordered list that's neither clean lazy numbering (all `1.`, which GitHub renumbers for you) nor a real incrementing run from its start. `1, 2, 4` or `1, 3, 2` is the hand-edit that dropped or duplicated a step. (MD029.)
+* **`odd-indent` (warning)**: Flags a list item indented by an **odd** number of spaces (1, 3, 5…) — the typo that can silently flip a nested item into a sibling or a stray paragraph. Promote with `--strict-indent`, silence with `--no-indent`. (Related to MD005/MD007.)
+* **No false positives**: Tracks fenced code blocks (```` ``` ````/`~~~`) and skips them, so a `-` in a code sample is never a bullet. Loose lists (blank lines between items) and lists separated by prose are handled correctly.
+* **CI / pre-commit ready**: Exit `0` (no errors — warnings alone don't fail), `1` (errors), `2` (usage/IO). `--json` for machine output, `--quiet` to print only failures. Each rule individually toggleable.
+* **Zero dependencies**: Pure Node `fs`. Network-free and deterministic.
+
+### 🚀 Usage:
+```bash
+# Lint one file
+node list-lint.js README.md
+
+# Lint several, machine-readable
+node list-lint.js docs/*.md --json
+
+# Make an odd indent fail the build too
+node list-lint.js README.md --strict-indent
+
+# Turn individual rules off
+node list-lint.js README.md --no-indent --no-ordered
+```
+
+### ⚠️ Honest limitation:
+No full CommonMark list parser — marker consistency and numbering are keyed by leading-space width, which is the common case; exotic nesting inside blockquotes or 4-space indented code may be read loosely. Ordered "start" is taken from the first item, so a list that deliberately starts at 5 and increments is accepted.
+
+### 📦 Reusable functions:
+Exports `lintText` for use in your own tooling via `require()`.
+
+---
+
 ## 🔁 Wire the docs checks into CI / pre-commit
 
 The linters are most useful when they run automatically — so docs rot fails a build instead of
-sitting unnoticed. `examples/check-docs.sh` wires **all seven** into one command; the
+sitting unnoticed. `examples/check-docs.sh` wires **all eight** into one command; the
 [`examples/`](examples/) folder has copy-paste artifacts to drop it into CI or a git hook:
 
 | File | What it is | How to use |
@@ -359,10 +396,11 @@ bash examples/check-docs.sh
 # ✓ All docs checks passed.
 ```
 
-**Four checks run by default** — `link-check`, `code-fence-lint`, `image-alt-lint`, and
+**Five checks run by default** — `link-check`, `code-fence-lint`, `image-alt-lint`,
 `frontmatter-lint` (`--allow-missing`, so plain docs pass and only files that *have* frontmatter
-get validated). These fail only on genuine defects: a dead link, an unclosed fence, a missing
-`alt`, malformed frontmatter.
+get validated), and `list-lint`. These fail only on genuine defects: a dead link, an unclosed
+fence, a missing `alt`, malformed frontmatter, or a list that mixes bullet markers / botches its
+numbering (`list-lint`'s odd-indent check is a non-failing warning).
 
 **Two checks are opt-in** — `heading-lint` and `table-fmt --check` — because they can flag
 deliberate style (repeated sub-headings across sections, hand-aligned tables), not bugs. Turn them
@@ -373,7 +411,7 @@ CHECK_HEADINGS=1 CHECK_TABLES=1 bash examples/check-docs.sh
 ```
 
 Every check is individually toggleable (`1` = run, `0` = skip):
-`CHECK_LINKS`, `CHECK_FENCES`, `CHECK_ALT`, `CHECK_FRONTMATTER`, `CHECK_HEADINGS`, `CHECK_TABLES`.
+`CHECK_LINKS`, `CHECK_FENCES`, `CHECK_ALT`, `CHECK_FRONTMATTER`, `CHECK_LISTS`, `CHECK_HEADINGS`, `CHECK_TABLES`.
 For example, `CHECK_ALT=0 bash examples/check-docs.sh` skips the alt-text check.
 
 To also verify a marker-based table of contents, list the files that use `<!-- TOC -->` markers:

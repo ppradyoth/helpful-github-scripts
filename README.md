@@ -16,6 +16,7 @@ A curated collection of highly robust, custom-built Node/Python automation scrip
 9. [code-fence-lint.js](#9-code-fence-lintjs)
 10. [image-alt-lint.js](#10-image-alt-lintjs)
 11. [list-lint.js](#11-list-lintjs)
+12. [commit-lint.js](#12-commit-lintjs)
 
 ---
 
@@ -374,6 +375,53 @@ No full CommonMark list parser — marker consistency and numbering are keyed by
 
 ### 📦 Reusable functions:
 Exports `lintText` for use in your own tooling via `require()`.
+
+---
+
+## 12. `commit-lint.js`
+> **The `Fixed stuff.` commit that quietly drops out of your changelog.**
+
+A zero-dependency Node script that lints **git commit messages** against [Conventional Commits](https://www.conventionalcommits.org/) — the format `semantic-release`, changelog generators, and auto-versioning tools depend on. The other scripts here lint *files*; this one lints *history*. A single `Feat:` (wrong case) or `feature:` (wrong word) silently falls out of the generated changelog and breaks the next version bump — this catches it at commit time, before it's baked into `main`.
+
+### ⚡ Key Features:
+* **`header-format` (error)**: The first line must parse as `type(scope)?!?: description`. No colon, an empty description, or a body glued to the header without a blank line is flagged — the structural problems that make a message un-parseable.
+* **`type` (error)**: The type must be lowercase and one of `feat, fix, docs, style, refactor, perf, test, build, ci, chore, revert`. `Feat` and `feature` are both flagged. Override the set with `--types feat,fix,docs`.
+* **`blank-line` (error)**: A body must be separated from the header by exactly one blank line (line 2), or `git log` and every parser misreads it as one long subject.
+* **`subject-length` (warning)**: Header over `--max-subject` (default 72) chars — the length that truncates in `git log --oneline`, GitHub, and email.
+* **`subject-style` (warning)**: Description ending in a period or starting with a capital letter (the commitlint "imperative, lowercase" house style). Acronyms like `API` are **not** flagged. Silence with `--no-style`.
+* **Breaking changes accepted, never flagged**: both `feat!: …` and a `BREAKING CHANGE:` footer are recognized.
+* **Hook-ready**: point it straight at `.git/COMMIT_EDITMSG` from a `commit-msg` hook — it strips git's `#` comment lines and the verbose-commit scissors (`# ------ >8 ------`) diff section first. Git-generated `Merge`/`Revert` messages are skipped by default (`--lint-merges` to check them).
+* **Three input modes**: message files (`node commit-lint.js .git/COMMIT_EDITMSG`), `--stdin`, or a whole range (`--range origin/main..HEAD`) to lint every commit in a PR.
+* **CI-ready**: exit `0` (no errors — warnings alone don't fail), `1` (errors), `2` (usage/IO/git). `--json` for machine output, `--quiet` to print only failures.
+* **Zero dependencies**: pure Node `fs` + `git` for the `--range` mode. Network-free.
+
+### 🚀 Usage:
+```bash
+# As a commit-msg hook (.git/hooks/commit-msg):
+#   #!/bin/sh
+#   exec node path/to/commit-lint.js "$1"
+
+# Lint a single message file
+node commit-lint.js .git/COMMIT_EDITMSG
+
+# Lint every commit in a PR before you push
+node commit-lint.js --range origin/main..HEAD
+
+# Pipe a message in
+echo "feat: add token refresh" | node commit-lint.js --stdin
+
+# Stricter subject cap, only allow two types
+node commit-lint.js --range HEAD~10..HEAD --max-subject 50 --types feat,fix
+```
+
+### 🐕 Dogfood note (honest output):
+This repo's own history predates the convention (commits like `Add list-lint.js: …`), so `node commit-lint.js --range HEAD~5..HEAD` flags them as malformed headers. That's the script working correctly — not a bug. History isn't rewritten here; the linter is meant to gate *new* commits going forward, which is exactly how you'd adopt it on a real project.
+
+### ⚠️ Honest limitation:
+Not a full `commitlint`. It checks header grammar, type, structure, and length hygiene — not a scope enum, footer/issue-reference syntax, or the semver implication of a type. That covers where most bad commits actually go wrong; reach for `commitlint` if you need the config-driven rule engine.
+
+### 📦 Reusable functions:
+Exports `lintMessage(message, opts)` and `stripGitCruft(raw)` for use in your own tooling via `require()`.
 
 ---
 

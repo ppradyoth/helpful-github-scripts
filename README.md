@@ -17,6 +17,7 @@ A curated collection of highly robust, custom-built Node/Python automation scrip
 10. [image-alt-lint.js](#10-image-alt-lintjs)
 11. [list-lint.js](#11-list-lintjs)
 12. [commit-lint.js](#12-commit-lintjs)
+13. [changelog-lint.js](#13-changelog-lintjs)
 
 ---
 
@@ -425,6 +426,45 @@ Exports `lintMessage(message, opts)` and `stripGitCruft(raw)` for use in your ow
 
 ---
 
+## 13. `changelog-lint.js`
+> **The `## v1.2.0` heading that your release tooling silently skips.**
+
+A zero-dependency Node script that lints a `CHANGELOG.md` against the [Keep a Changelog](https://keepachangelog.com/) convention. `commit-lint.js` lints *history* and the rest lint *any* Markdown; this one lints the **one file** release automation actually parses. A version heading written `## v1.2.0` instead of `## [1.2.0] - 2025-06-01`, or a change group typo'd `### Fixes` instead of `### Fixed`, drops that section out of every parser that reads it — GitHub Release notes, `semantic-release`, changelog aggregators. This catches it before you tag.
+
+### ⚡ Key Features:
+* **`version-format` (error)**: A release heading must be `## [x.y.z] - YYYY-MM-DD` (or `## [Unreleased]`). Catches `## 1.2.0`, `## [1.2.0]` with no date, `## v1.2.0 - …`, missing brackets. An optional trailing ` [YANKED]` is allowed.
+* **`invalid-version` (error)**: The bracketed version must be valid [SemVer](https://semver.org/) — `[1.2]`, `[1.2.0.0]`, and `[01.2.0]` are flagged (official SemVer 2.0.0 grammar, pre-release and build metadata supported).
+* **`invalid-date` (error)**: The date must be a real ISO `YYYY-MM-DD` calendar date — `2025-13-40` and `2025-02-30` are rejected, not just regex-matched.
+* **`bad-change-type` (error)**: An `###` group under a version must be one of the six Keep a Changelog sections — `Added, Changed, Deprecated, Removed, Fixed, Security`. `### Fixes`, `### New`, `### Notes` are the classic drift.
+* **`duplicate-version` (error)**: The same version number in two headings — the copy-paste-a-section-and-forget-to-bump mistake.
+* **`no-unreleased` (warning)**: No `## [Unreleased]` section — the recommended landing spot for the next change.
+* **`version-order` (warning)**: Releases not listed newest-first by SemVer precedence, or `[Unreleased]` not on top.
+* **`empty-section` (warning)**: A version or change group with no entries beneath it (a version whose only content is its `###` groups is *not* flagged).
+* **Fenced code aware**: a `## 9.9.9` inside a ` ``` ` block is a sample, not a heading — never flagged.
+* **CI-ready**: exit `0` (no errors — warnings alone don't fail), `1` (errors), `2` (usage/IO). `--json`, `--quiet`, `--strict` (promote warnings to errors), and a `--no-<rule>` flag per rule.
+* **Zero dependencies**: pure Node `fs`. Network-free.
+
+### 🚀 Usage:
+```bash
+# Lint the changelog
+node changelog-lint.js CHANGELOG.md
+
+# Machine-readable, or fail on warnings too
+node changelog-lint.js CHANGELOG.md --json
+node changelog-lint.js CHANGELOG.md --strict
+
+# Turn off the "newest first" and "needs Unreleased" opinions
+node changelog-lint.js CHANGELOG.md --no-order --no-unreleased
+```
+
+### ⚠️ Honest limitation:
+It checks **structure**, not prose — it won't tell you an entry is badly written or that a shipped change went unlogged. It also skips the bottom link-reference definitions (`[1.2.0]: …/compare/…`); that's `link-check.js`'s job. It validates the skeleton every tool relies on, and leaves the writing to you.
+
+### 📦 Reusable functions:
+Exports `lintText(text, opts)`, plus `parseSemver`, `compareSemver`, and `isValidDate` for use in your own tooling via `require()`.
+
+---
+
 ## 🔁 Wire the docs checks into CI / pre-commit
 
 The linters are most useful when they run automatically — so docs rot fails a build instead of
@@ -467,6 +507,10 @@ To also verify a marker-based table of contents, list the files that use `<!-- T
 ```bash
 TOC_FILES="README.md docs/guide.md" bash examples/check-docs.sh
 ```
+
+The **changelog check runs automatically** when the repo has a `CHANGELOG.md` — `check-docs.sh`
+auto-detects it and lints it with `changelog-lint.js`. Point it elsewhere with
+`CHANGELOG_FILE=docs/CHANGELOG.md`, or skip it with `CHANGELOG_FILE=`.
 
 > **Note:** the TOC check is opt-in per file because `markdown-toc.js --check` keys off the literal
 > `<!-- TOC -->` markers — a doc that only *mentions* those strings in prose (like this README) would

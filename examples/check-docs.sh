@@ -13,6 +13,8 @@
 #   heading-lint.js      heading structure / duplicate anchors    (default: OFF — opt-in)
 #   table-fmt.js         GFM tables not aligned                    (default: OFF — opt-in)
 #   markdown-toc.js      <!-- TOC --> block out of date           (opt-in via TOC_FILES)
+#   changelog-lint.js    CHANGELOG.md not Keep-a-Changelog shape   (auto: ON when a
+#                                                                   CHANGELOG.md exists)
 #
 # Why some are OFF by default: heading-lint flags duplicate heading *slugs*, and
 # table-fmt enforces one specific alignment — both are legitimate, but a repo can
@@ -34,6 +36,8 @@
 #   CHECK_HEADINGS=1 CHECK_TABLES=1 examples/check-docs.sh   # strict: run everything
 #   CHECK_ALT=0 examples/check-docs.sh          # skip the alt-text check
 #   TOC_FILES="README.md" examples/check-docs.sh            # also verify README's TOC
+#   CHANGELOG_FILE=docs/CHANGELOG.md examples/check-docs.sh  # lint a changelog elsewhere
+#   CHANGELOG_FILE= examples/check-docs.sh                   # skip the changelog check
 #   SCRIPTS_DIR=. examples/check-docs.sh        # if the scripts live somewhere custom
 #
 # Requires: node, git. Zero npm dependencies.
@@ -55,6 +59,12 @@ CHECK_TABLES="${CHECK_TABLES:-0}"
 # Files with <!-- TOC --> markers whose TOC should be verified. Space-separated.
 # Leave empty to skip the TOC check entirely.
 TOC_FILES="${TOC_FILES:-}"
+
+# Changelog to lint against Keep-a-Changelog. Auto-detects a repo-root CHANGELOG.md
+# (case-insensitive) when unset; set to a path to point elsewhere, or empty to skip.
+if [ -z "${CHANGELOG_FILE+set}" ]; then
+  CHANGELOG_FILE="$(git ls-files | grep -iE '(^|/)CHANGELOG\.(md|markdown)$' | head -n1 || true)"
+fi
 
 fail=0
 
@@ -95,6 +105,15 @@ if [ -n "$TOC_FILES" ]; then
       fail=1
     fi
   done
+fi
+
+# Changelog structure check (single file, not the whole md set — a CHANGELOG has a
+# shape no other Markdown file does, so it can't ride the run_check loop).
+if [ -n "$CHANGELOG_FILE" ] && [ -f "$CHANGELOG_FILE" ]; then
+  echo "→ changelog (changelog-lint)"
+  if ! node "$SCRIPTS_DIR/changelog-lint.js" "$CHANGELOG_FILE"; then
+    fail=1
+  fi
 fi
 
 if [ "$fail" -ne 0 ]; then

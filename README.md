@@ -18,6 +18,7 @@ A curated collection of highly robust, custom-built Node/Python automation scrip
 11. [list-lint.js](#11-list-lintjs)
 12. [commit-lint.js](#12-commit-lintjs)
 13. [changelog-lint.js](#13-changelog-lintjs)
+14. [whitespace-lint.js](#14-whitespace-lintjs)
 
 ---
 
@@ -465,10 +466,50 @@ Exports `lintText(text, opts)`, plus `parseSemver`, `compareSemver`, and `isVali
 
 ---
 
+## 14. `whitespace-lint.js`
+> **The invisible diff noise every other linter ignores — and the one that can safely fix itself.**
+
+A zero-dependency Node script that lints (and repairs) whitespace *hygiene* in any text file. The rest of the family checks what a document **says**; this one checks the invisible bytes around it — trailing spaces, hard tabs, CRLF line endings, a missing final newline, runs of blank lines. None of them change the rendered output; all of them create diff churn, merge conflicts, and "why did my whole file change?" pull requests. Because every rule is mechanical, `--fix` can repair all of them safely and idempotently.
+
+### ⚡ Key Features:
+* **`trailing-whitespace` (error, MD009)**: A line ends in spaces/tabs. Exception: exactly **two** trailing spaces is a Markdown hard line break — allowed by default, forbid it with `--no-md-breaks`.
+* **`hard-tab` (error, MD010)**: A tab used for indentation *outside* a fenced code block (tabs render at an unpredictable width and misalign nested lists). Tabs **inside** code fences are left alone — often significant, e.g. a pasted Makefile — unless you pass `--tabs-in-code`.
+* **`crlf` (error)**: A line ends in `\r\n` or a bare `\r`. Windows checkouts sneak these in and make every line look changed on a Unix diff.
+* **`final-newline` (error)**: The file doesn't end with exactly one newline — covers both "no newline at end of file" (GitHub's telltale marker) and "extra blank lines at EOF."
+* **`multiple-blanks` (warning, MD012)**: More than N consecutive blank lines (`--max-blanks N`, default 1). Warning by default; promote with `--strict-blanks`.
+* **`--fix`**: Repairs every enabled rule in place — strips trailing space, expands indent tabs to spaces, normalizes to LF, collapses blank runs, and lands exactly one final newline. **Idempotent**: running it twice changes nothing the second time.
+* **Fenced code aware**: the hard-tab and blank-run rules skip ` ``` `/`~~~` blocks by default (code has its own whitespace rules); trailing-whitespace, CRLF, and final-newline are checked everywhere because they're never intentional.
+* **Works on any text file**, not just Markdown — point it at `.js`, `.py`, `.yml`, whatever. The Markdown-specific logic simply won't trigger where there are no fences or hard breaks.
+* **CI-ready**: exit `0` (clean, or `--fix` repaired everything), `1` (findings), `2` (usage/IO). `--json` for machine output, and a `--no-<rule>` flag per rule.
+* **Zero dependencies**: pure Node `fs`. Network-free.
+
+### 🚀 Usage:
+```bash
+# Lint one or many files
+node whitespace-lint.js README.md
+node whitespace-lint.js src/*.js docs/*.md --json
+
+# Repair in place (safe, idempotent)
+node whitespace-lint.js *.md --fix
+
+# Tighten or loosen the opinions
+node whitespace-lint.js post.md --no-md-breaks      # a 2-space break is an error too
+node whitespace-lint.js post.md --max-blanks 2       # allow up to 2 blank lines
+node whitespace-lint.js post.md --no-crlf --no-tab   # turn rules off
+```
+
+### ⚠️ Honest limitation:
+`--fix` collapses blank-line runs globally rather than re-parsing fences during the rewrite, so a code sample that deliberately embeds three blank lines will be trimmed to your `--max-blanks` too — rare, but pass `--no-blanks` if a doc relies on it. Tab-to-space fixing uses 2 spaces per indent tab; if your project standard is 4, run your formatter after.
+
+### 📦 Reusable functions:
+Exports `lintContent(raw, opts)`, `fixContent(raw, opts)`, `parseArgs`, `detectEol`, and `fenceMarker` for use in your own tooling via `require()`.
+
+---
+
 ## 🔁 Wire the docs checks into CI / pre-commit
 
 The linters are most useful when they run automatically — so docs rot fails a build instead of
-sitting unnoticed. `examples/check-docs.sh` wires **all eight** into one command; the
+sitting unnoticed. `examples/check-docs.sh` wires **the whole suite** into one command; the
 [`examples/`](examples/) folder has copy-paste artifacts to drop it into CI or a git hook:
 
 | File | What it is | How to use |

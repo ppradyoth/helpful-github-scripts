@@ -2,14 +2,15 @@
 #
 # check-docs.sh — run the whole zero-dep Markdown linting suite in one command.
 #
-# Wires together the eight linters in this repo so CI (or a pre-commit hook) can
-# call ONE thing instead of eight:
+# Wires together the linters in this repo so CI (or a pre-commit hook) can
+# call ONE thing instead of many:
 #
 #   link-check.js        broken local links / dead anchors        (default: ON)
 #   code-fence-lint.js   unclosed / mismatched code fences        (default: ON)
 #   image-alt-lint.js    images missing or weak alt text (a11y)   (default: ON)
 #   frontmatter-lint.js  bad YAML frontmatter (files that have it) (default: ON)
 #   list-lint.js         mixed bullets / broken ordered numbering (default: ON)
+#   whitespace-lint.js   trailing spaces / tabs / CRLF / EOF newline (default: ON)
 #   heading-lint.js      heading structure / duplicate anchors    (default: OFF — opt-in)
 #   table-fmt.js         GFM tables not aligned                    (default: OFF — opt-in)
 #   markdown-toc.js      <!-- TOC --> block out of date           (opt-in via TOC_FILES)
@@ -19,15 +20,18 @@
 # Why some are OFF by default: heading-lint flags duplicate heading *slugs*, and
 # table-fmt enforces one specific alignment — both are legitimate, but a repo can
 # reasonably repeat sub-headings across sections or hand-format its tables. Those
-# checks fail on style choices, not bugs, so they're opt-in. The five ON-by-default
+# checks fail on style choices, not bugs, so they're opt-in. The six ON-by-default
 # checks only fail on genuine defects (a dead link, an unclosed fence, a missing
 # alt attribute, malformed frontmatter, a list that mixes bullet markers or botches
-# its numbering), so they're safe to gate every build. (list-lint's odd-indent rule
-# is a non-failing warning, so it never breaks a build on its own.)
+# its numbering, trailing whitespace / hard tabs / CRLF / a missing final newline),
+# so they're safe to gate every build. (list-lint's odd-indent and whitespace-lint's
+# multiple-blank-lines rules are non-failing warnings, so they never break a build on
+# their own.)
 #
 # Every check is individually toggleable with an env var (1 = run, 0 = skip):
 #
-#   CHECK_LINKS CHECK_FENCES CHECK_ALT CHECK_FRONTMATTER CHECK_LISTS CHECK_HEADINGS CHECK_TABLES
+#   CHECK_LINKS CHECK_FENCES CHECK_ALT CHECK_FRONTMATTER CHECK_LISTS CHECK_WHITESPACE
+#   CHECK_HEADINGS CHECK_TABLES
 #
 # Exit codes: 0 = everything passed, 1 = a check failed. Safe for CI and pre-commit.
 #
@@ -53,6 +57,7 @@ CHECK_FENCES="${CHECK_FENCES:-1}"
 CHECK_ALT="${CHECK_ALT:-1}"
 CHECK_FRONTMATTER="${CHECK_FRONTMATTER:-1}"
 CHECK_LISTS="${CHECK_LISTS:-1}"
+CHECK_WHITESPACE="${CHECK_WHITESPACE:-1}"
 CHECK_HEADINGS="${CHECK_HEADINGS:-0}"
 CHECK_TABLES="${CHECK_TABLES:-0}"
 
@@ -94,6 +99,7 @@ run_check "$CHECK_FENCES"      "code fences (code-fence-lint)" code-fence-lint.j
 run_check "$CHECK_ALT"         "image alt text (image-alt-lint)" image-alt-lint.js
 run_check "$CHECK_FRONTMATTER" "frontmatter (frontmatter-lint)" frontmatter-lint.js --allow-missing
 run_check "$CHECK_LISTS"       "lists (list-lint)"             list-lint.js
+run_check "$CHECK_WHITESPACE"  "whitespace (whitespace-lint)"  whitespace-lint.js
 run_check "$CHECK_HEADINGS"    "headings (heading-lint)"       heading-lint.js
 run_check "$CHECK_TABLES"      "tables (table-fmt --check)"    table-fmt.js --check
 

@@ -8,6 +8,7 @@
 #   link-check.js        broken local links / dead anchors        (default: ON)
 #   code-fence-lint.js   unclosed / mismatched code fences        (default: ON)
 #   image-alt-lint.js    images missing or weak alt text (a11y)   (default: ON)
+#   link-text-lint.js    empty / non-descriptive link text (a11y) (default: ON)
 #   frontmatter-lint.js  bad YAML frontmatter (files that have it) (default: ON)
 #   list-lint.js         mixed bullets / broken ordered numbering (default: ON)
 #   whitespace-lint.js   trailing spaces / tabs / CRLF / EOF newline (default: ON)
@@ -20,18 +21,19 @@
 # Why some are OFF by default: heading-lint flags duplicate heading *slugs*, and
 # table-fmt enforces one specific alignment — both are legitimate, but a repo can
 # reasonably repeat sub-headings across sections or hand-format its tables. Those
-# checks fail on style choices, not bugs, so they're opt-in. The six ON-by-default
+# checks fail on style choices, not bugs, so they're opt-in. The seven ON-by-default
 # checks only fail on genuine defects (a dead link, an unclosed fence, a missing
-# alt attribute, malformed frontmatter, a list that mixes bullet markers or botches
-# its numbering, trailing whitespace / hard tabs / CRLF / a missing final newline),
-# so they're safe to gate every build. (list-lint's odd-indent and whitespace-lint's
-# multiple-blank-lines rules are non-failing warnings, so they never break a build on
-# their own.)
+# alt attribute, an empty/whitespace link text, malformed frontmatter, a list that
+# mixes bullet markers or botches its numbering, trailing whitespace / hard tabs /
+# CRLF / a missing final newline), so they're safe to gate every build. (list-lint's
+# odd-indent, whitespace-lint's multiple-blank-lines, and link-text-lint's
+# non-descriptive / raw-URL link-text rules are non-failing warnings, so they never
+# break a build on their own.)
 #
 # Every check is individually toggleable with an env var (1 = run, 0 = skip):
 #
-#   CHECK_LINKS CHECK_FENCES CHECK_ALT CHECK_FRONTMATTER CHECK_LISTS CHECK_WHITESPACE
-#   CHECK_HEADINGS CHECK_TABLES
+#   CHECK_LINKS CHECK_FENCES CHECK_ALT CHECK_LINK_TEXT CHECK_FRONTMATTER CHECK_LISTS
+#   CHECK_WHITESPACE CHECK_HEADINGS CHECK_TABLES
 #
 # Exit codes: 0 = everything passed, 1 = a check failed. Safe for CI and pre-commit.
 #
@@ -55,6 +57,7 @@ SCRIPTS_DIR="${SCRIPTS_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}"
 CHECK_LINKS="${CHECK_LINKS:-1}"
 CHECK_FENCES="${CHECK_FENCES:-1}"
 CHECK_ALT="${CHECK_ALT:-1}"
+CHECK_LINK_TEXT="${CHECK_LINK_TEXT:-1}"
 CHECK_FRONTMATTER="${CHECK_FRONTMATTER:-1}"
 CHECK_LISTS="${CHECK_LISTS:-1}"
 CHECK_WHITESPACE="${CHECK_WHITESPACE:-1}"
@@ -97,6 +100,7 @@ run_check() {
 run_check "$CHECK_LINKS"       "links (link-check)"            link-check.js
 run_check "$CHECK_FENCES"      "code fences (code-fence-lint)" code-fence-lint.js
 run_check "$CHECK_ALT"         "image alt text (image-alt-lint)" image-alt-lint.js
+run_check "$CHECK_LINK_TEXT"   "link text (link-text-lint)"     link-text-lint.js
 run_check "$CHECK_FRONTMATTER" "frontmatter (frontmatter-lint)" frontmatter-lint.js --allow-missing
 run_check "$CHECK_LISTS"       "lists (list-lint)"             list-lint.js
 run_check "$CHECK_WHITESPACE"  "whitespace (whitespace-lint)"  whitespace-lint.js

@@ -19,6 +19,7 @@ A curated collection of highly robust, custom-built Node/Python automation scrip
 12. [commit-lint.js](#12-commit-lintjs)
 13. [changelog-lint.js](#13-changelog-lintjs)
 14. [whitespace-lint.js](#14-whitespace-lintjs)
+15. [link-text-lint.js](#15-link-text-lintjs)
 
 ---
 
@@ -506,6 +507,44 @@ Exports `lintContent(raw, opts)`, `fixContent(raw, opts)`, `parseArgs`, `detectE
 
 ---
 
+## 15. `link-text-lint.js`
+> **The "click here" link that says nothing to a screen reader — or to Google.**
+
+A zero-dependency Node script that lints **link text** in Markdown and inline HTML — the accessibility (and SEO) gap that a link checker can't see. `link-check.js` tells you a URL is *dead*; this tells you a *working* link has text that says *nothing*. Screen-reader users routinely pull up a list of every link on the page and navigate by that list, out of context — a page of ten "click here" links is ten identical, meaningless entries. Search engines read link text as a relevance signal for the destination, so "here" and "read more" throw that away too. It's the link-side companion to `image-alt-lint.js`: one flags images that describe nothing to a listener, this flags links that do.
+
+### ⚡ Key Features:
+* **Empty & whitespace text (errors)**: Flags `[](url)`, `[   ](url)`, and `<a href=...></a>` with no text — a screen reader announces the raw URL or nothing. Exit `1`.
+* **Non-descriptive text (warning)**: Catches the WCAG 2.4.4 classics — `click here`, `here`, `this`, `this link`, `read more`, `learn more`, `more`, `link`, `download`… — text that's meaningless away from its sentence. Promote to errors with `--strict`.
+* **Raw-URL text (warning)**: Flags a link whose visible text is just a long URL (`[https://ex.com/a/b/c](https://…)`) — a listener hears the whole thing read aloud. Short bare domains (`example.com`) read fine and pass.
+* **Markdown *and* HTML**: Handles `[text](url)`, reference-style `[text][ref]`, and `<a href>text</a>`. Ignores images (`![alt](src)` — that's `image-alt-lint.js`'s job) and idiomatic angle-bracket autolinks (`<https://example.com>`).
+* **Unwraps formatting**: bold link text like `[**here**](https://example.com)` and code-styled text like `` [`cmd`](https://example.com) `` are normalized before checking, so emphasis and inline-code link text are judged by their rendered words — and a real code-styled link is *not* mistaken for empty.
+* **No false positives**: Skips fenced code blocks and links written *inside* an inline `` `code` `` span (a literal `` `[here](x)` `` example never trips it). Per-line opt-out with a trailing `<!-- link-lint-ignore -->`.
+* **CI / pre-commit ready**: Exit `0` (no errors — warnings alone don't fail unless `--strict`), `1` (errors), or `2` (usage/IO error). `--json` for machine output, `--quiet` to print only failures, `--no-html` for Markdown-only.
+* **Zero dependencies**: Pure Node `fs`. Network-free and deterministic.
+
+### 🚀 Usage:
+```bash
+# Lint one file
+node link-text-lint.js README.md
+
+# Lint several, machine-readable
+node link-text-lint.js README.md docs/*.md --json
+
+# Make non-descriptive / raw-URL link text fail the build too
+node link-text-lint.js README.md --strict
+
+# Only Markdown links, ignore <a> tags
+node link-text-lint.js README.md --no-html
+```
+
+### ⚠️ Honest limitation:
+Links are matched per line, so an `<a>` tag whose opening tag and text span multiple lines isn't fully parsed. The common cases — Markdown links and single-line `<a>` — are handled. The non-descriptive word list is English; localize the `NONDESCRIPTIVE` set for other languages.
+
+### 📦 Reusable functions:
+Exports `lintLinks`, `classifyText`, `plainText`, `normalizeText`, `htmlAttr`, and `codeSpanRanges` for use in your own tooling via `require()`.
+
+---
+
 ## 🔁 Wire the docs checks into CI / pre-commit
 
 The linters are most useful when they run automatically — so docs rot fails a build instead of
@@ -525,11 +564,14 @@ bash examples/check-docs.sh
 # ✓ All docs checks passed.
 ```
 
-**Five checks run by default** — `link-check`, `code-fence-lint`, `image-alt-lint`,
-`frontmatter-lint` (`--allow-missing`, so plain docs pass and only files that *have* frontmatter
-get validated), and `list-lint`. These fail only on genuine defects: a dead link, an unclosed
-fence, a missing `alt`, malformed frontmatter, or a list that mixes bullet markers / botches its
-numbering (`list-lint`'s odd-indent check is a non-failing warning).
+**Seven checks run by default** — `link-check`, `code-fence-lint`, `image-alt-lint`,
+`link-text-lint`, `frontmatter-lint` (`--allow-missing`, so plain docs pass and only files that
+*have* frontmatter get validated), `list-lint`, and `whitespace-lint`. These fail only on genuine
+defects: a dead link, an unclosed fence, a missing `alt`, an empty/whitespace link text, malformed
+frontmatter, a list that mixes bullet markers / botches its numbering, or trailing whitespace /
+hard tabs / CRLF / a missing final newline. (`list-lint`'s odd-indent, `whitespace-lint`'s
+multiple-blank-lines, and `link-text-lint`'s non-descriptive / raw-URL rules are non-failing
+warnings.)
 
 **Two checks are opt-in** — `heading-lint` and `table-fmt --check` — because they can flag
 deliberate style (repeated sub-headings across sections, hand-aligned tables), not bugs. Turn them
@@ -540,7 +582,7 @@ CHECK_HEADINGS=1 CHECK_TABLES=1 bash examples/check-docs.sh
 ```
 
 Every check is individually toggleable (`1` = run, `0` = skip):
-`CHECK_LINKS`, `CHECK_FENCES`, `CHECK_ALT`, `CHECK_FRONTMATTER`, `CHECK_LISTS`, `CHECK_HEADINGS`, `CHECK_TABLES`.
+`CHECK_LINKS`, `CHECK_FENCES`, `CHECK_ALT`, `CHECK_LINK_TEXT`, `CHECK_FRONTMATTER`, `CHECK_LISTS`, `CHECK_WHITESPACE`, `CHECK_HEADINGS`, `CHECK_TABLES`.
 For example, `CHECK_ALT=0 bash examples/check-docs.sh` skips the alt-text check.
 
 To also verify a marker-based table of contents, list the files that use `<!-- TOC -->` markers:

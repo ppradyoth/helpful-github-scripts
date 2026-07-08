@@ -20,6 +20,7 @@ A curated collection of highly robust, custom-built Node/Python automation scrip
 13. [changelog-lint.js](#13-changelog-lintjs)
 14. [whitespace-lint.js](#14-whitespace-lintjs)
 15. [link-text-lint.js](#15-link-text-lintjs)
+16. [secret-scan.js](#16-secret-scanjs)
 
 ---
 
@@ -545,6 +546,43 @@ Exports `lintLinks`, `classifyText`, `plainText`, `normalizeText`, `htmlAttr`, a
 
 ---
 
+## 16. `secret-scan.js`
+> **The one commit you can't take back: a live credential.**
+
+A zero-dependency Node scanner for hardcoded secrets — API keys, tokens, private keys — in your working tree. This is the *security* check the doc linters aren't: once a real key lands in git history it's public forever, and the fix is to **rotate the key, not `git rm` it**. So you catch it *before* the commit, with no install and no network call. It uses the same prefix-anchored patterns the heavyweight scanners (gitleaks, trufflehog) ship, so it recognizes real credential shapes rather than guessing.
+
+### ⚡ Key Features:
+* **Prefix-anchored, high-confidence rules (errors)**: AWS access key IDs (`AKIA…`), GitHub tokens (`ghp_`/`gho_`/`ghu_`/`ghs_`/`ghr_` and fine-grained `github_pat_`), Slack tokens (`xoxb-…`) and webhooks (`hooks.slack.com/services/…`), Google API keys (`AIza…`), Stripe secret/restricted keys (`sk_live_`/`rk_live_`), npm tokens (`npm_…`), and `-----BEGIN … PRIVATE KEY-----` blocks. These are specific enough to act on — they fail the run.
+* **Lower-confidence shapes (warnings)**: JWT-shaped strings (often not secret) and generic `secret = "…"` / `api_key = "…"` assignments whose value clears an entropy bar. Advisory by default; promote to failures with `--strict`.
+* **Entropy + placeholder filtering**: The generic rule computes Shannon entropy so a random token trips it but a low-entropy string doesn't. Obvious placeholders — `EXAMPLE`, `your_token_here`, `<redacted>`, `${VAR}`, `{{...}}`, repeated-char runs — are filtered out, which is why AWS's own docs value `AKIAIOSFODNN7EXAMPLE` never fires.
+* **Redacted output**: Every finding shows only the first/last few characters (`ghp_…Vt6y (40 chars)`), so the scanner's own report never becomes the leak.
+* **Tree-aware**: Point it at a directory and it walks the tree, skipping `.git`, `node_modules`, `vendor`, build output, binaries, and files over 2 MB (plus a NUL-byte binary sniff).
+* **CI / pre-commit ready**: Exit `0` (clean), `1` (secret found — or a warning under `--strict`), `2` (usage/IO error). `--json` for machine output, `--quiet` to suppress the success line.
+* **Zero dependencies**: Pure Node `fs`/`path`. Deterministic, network-free.
+
+### 🚀 Usage:
+```bash
+# Scan a whole tree
+node secret-scan.js .
+
+# Scan specific files (e.g. a staged .env you didn't mean to add)
+node secret-scan.js src/config.js .env
+
+# Make JWTs and generic high-entropy assignments fail too
+node secret-scan.js . --strict
+
+# Machine-readable
+node secret-scan.js . --json
+```
+
+### ⚠️ Honest limitation:
+It scans the **working tree**, not git history — so it stops a secret from being *added*, but won't find one already buried in past commits (run it in a fresh clone, or over `git log -p` output, for that). Prefix-anchored rules can't catch a bespoke in-house token with no fixed shape; the entropy rule is the conservative fallback. Tune the `RULES` and entropy `THRESHOLDS` for a noisier or stricter codebase.
+
+### 📦 Reusable functions:
+Exports `RULES`, `shannonEntropy`, `redact`, `isPlaceholder`, `scanText`, `scanFile`, and `scanPaths` for use in your own tooling via `require()`.
+
+---
+
 ## 🔁 Wire the docs checks into CI / pre-commit
 
 The linters are most useful when they run automatically — so docs rot fails a build instead of
@@ -556,6 +594,7 @@ sitting unnoticed. `examples/check-docs.sh` wires **the whole suite** into one c
 | [`examples/check-docs.sh`](examples/check-docs.sh) | One command that runs the whole suite over every tracked Markdown file — links, code fences, image alt text, and frontmatter by default; heading structure, table alignment, and marker-based TOCs opt-in. Exit `0`/`1`. | `bash examples/check-docs.sh` |
 | [`examples/docs-check.yml`](examples/docs-check.yml) | GitHub Actions workflow — runs the checks on every push/PR that touches Markdown. | Copy to `.github/workflows/docs-check.yml` |
 | [`examples/git-pre-commit`](examples/git-pre-commit) | Pre-commit hook — blocks a commit that introduces a broken link (checks only staged Markdown). | `cp examples/git-pre-commit .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit` |
+| [`examples/git-pre-commit-secrets`](examples/git-pre-commit-secrets) | Pre-commit hook — blocks a commit that adds a hardcoded secret (scans only staged files with `secret-scan.js`). | `cp examples/git-pre-commit-secrets .git/hooks/pre-commit && chmod +x .git/hooks/pre-commit` |
 
 ```bash
 # Try it right now, on this repo:

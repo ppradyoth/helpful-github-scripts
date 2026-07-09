@@ -12,6 +12,7 @@
 #   frontmatter-lint.js  bad YAML frontmatter (files that have it) (default: ON)
 #   list-lint.js         mixed bullets / broken ordered numbering (default: ON)
 #   whitespace-lint.js   trailing spaces / tabs / CRLF / EOF newline (default: ON)
+#   reference-link-lint.js undefined [text][ref] / unused defs    (default: ON)
 #   heading-lint.js      heading structure / duplicate anchors    (default: OFF — opt-in)
 #   table-fmt.js         GFM tables not aligned                    (default: OFF — opt-in)
 #   markdown-toc.js      <!-- TOC --> block out of date           (opt-in via TOC_FILES)
@@ -28,12 +29,14 @@
 # CRLF / a missing final newline), so they're safe to gate every build. (list-lint's
 # odd-indent, whitespace-lint's multiple-blank-lines, and link-text-lint's
 # non-descriptive / raw-URL link-text rules are non-failing warnings, so they never
-# break a build on their own.)
+# break a build on their own. reference-link-lint fails only on an undefined
+# reference — a link that renders broken; its unused/duplicate-definition findings
+# are warnings that fail only under its own --strict, which this suite doesn't pass.)
 #
 # Every check is individually toggleable with an env var (1 = run, 0 = skip):
 #
 #   CHECK_LINKS CHECK_FENCES CHECK_ALT CHECK_LINK_TEXT CHECK_FRONTMATTER CHECK_LISTS
-#   CHECK_WHITESPACE CHECK_HEADINGS CHECK_TABLES
+#   CHECK_WHITESPACE CHECK_REFS CHECK_HEADINGS CHECK_TABLES
 #
 # Exit codes: 0 = everything passed, 1 = a check failed. Safe for CI and pre-commit.
 #
@@ -61,6 +64,7 @@ CHECK_LINK_TEXT="${CHECK_LINK_TEXT:-1}"
 CHECK_FRONTMATTER="${CHECK_FRONTMATTER:-1}"
 CHECK_LISTS="${CHECK_LISTS:-1}"
 CHECK_WHITESPACE="${CHECK_WHITESPACE:-1}"
+CHECK_REFS="${CHECK_REFS:-1}"
 CHECK_HEADINGS="${CHECK_HEADINGS:-0}"
 CHECK_TABLES="${CHECK_TABLES:-0}"
 
@@ -104,6 +108,7 @@ run_check "$CHECK_LINK_TEXT"   "link text (link-text-lint)"     link-text-lint.j
 run_check "$CHECK_FRONTMATTER" "frontmatter (frontmatter-lint)" frontmatter-lint.js --allow-missing
 run_check "$CHECK_LISTS"       "lists (list-lint)"             list-lint.js
 run_check "$CHECK_WHITESPACE"  "whitespace (whitespace-lint)"  whitespace-lint.js
+run_check "$CHECK_REFS"        "reference links (reference-link-lint)" reference-link-lint.js
 run_check "$CHECK_HEADINGS"    "headings (heading-lint)"       heading-lint.js
 run_check "$CHECK_TABLES"      "tables (table-fmt --check)"    table-fmt.js --check
 

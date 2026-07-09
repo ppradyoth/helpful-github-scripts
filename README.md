@@ -21,6 +21,7 @@ A curated collection of highly robust, custom-built Node/Python automation scrip
 14. [whitespace-lint.js](#14-whitespace-lintjs)
 15. [link-text-lint.js](#15-link-text-lintjs)
 16. [secret-scan.js](#16-secret-scanjs)
+17. [reference-link-lint.js](#17-reference-link-lintjs)
 
 ---
 
@@ -580,6 +581,41 @@ It scans the **working tree**, not git history — so it stops a secret from bei
 
 ### 📦 Reusable functions:
 Exports `RULES`, `shannonEntropy`, `redact`, `isPlaceholder`, `scanText`, `scanFile`, and `scanPaths` for use in your own tooling via `require()`.
+
+---
+
+## 17. `reference-link-lint.js`
+> **The link that renders as literal brackets — `[see the guide][guide]` — because the definition was renamed.**
+
+Markdown has two link syntaxes. Inline — `[text](url)` — is what `link-check.js` validates. This lints the *other* one: **reference style**, where the text and the URL are separated (`[text][guide]` in the prose, `[guide]: https://…` defined elsewhere). It keeps long docs readable, but it fails in two ways a URL checker never sees — because the bug is whether the *label* resolves, not whether the URL is reachable.
+
+### ⚡ What it catches:
+* **Undefined reference (error)** — `[text][gone]` or collapsed `[gone][]` where `[gone]:` was renamed or never written. GitHub renders this as literal text, brackets and all. (markdownlint **MD052**.) Fails the run — the link is visibly broken.
+* **Unused definition (warning)** — `[old]: https://…` left behind after every `[old]` reference was deleted. Dead weight that rots silently. (markdownlint **MD053**.)
+* **Duplicate definition (warning)** — the same `[label]:` defined twice. CommonMark keeps the **first** and silently ignores the rest, so the second URL you thought you set never applies.
+
+### ✅ What it *won't* false-positive on:
+* **Shortcut text that isn't a link.** A bare `[just some brackets]` with no matching definition is literal text in Markdown, not a broken link — so it's never reported as undefined. Only the explicit `[text][ref]` / `[ref][]` forms (which *declare* themselves references) can be "undefined."
+* **Examples in code.** References inside ` ``` ` fences or `` `backticks` `` are skipped, so a documented snippet doesn't trip the linter.
+* **A definition used only by a shortcut.** `[home]` in prose counts as using `[home]:` — it won't be flagged unused.
+
+### 🚀 Usage:
+```bash
+# Check one file (or several)
+node reference-link-lint.js README.md docs/*.md
+
+# Make unused / duplicate definitions fail too (default: warnings only)
+node reference-link-lint.js README.md --strict
+
+# Machine-readable / quiet-on-success
+node reference-link-lint.js README.md --json
+node reference-link-lint.js README.md --quiet
+```
+
+Exit `0` (clean), `1` (an undefined reference — or any warning under `--strict`), `2` (usage/read error). Wired into `check-docs.sh` as a default-ON, defect-only check (only the undefined-reference error fails the suite; unused/duplicate stay advisory unless you pass `--strict`).
+
+### 📦 Reusable functions:
+Exports `normLabel`, `parseReferences`, and `checkFile` for use in your own tooling via `require()`.
 
 ---
 

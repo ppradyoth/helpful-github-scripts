@@ -22,6 +22,7 @@ A curated collection of highly robust, custom-built Node/Python automation scrip
 15. [link-text-lint.js](#15-link-text-lintjs)
 16. [secret-scan.js](#16-secret-scanjs)
 17. [reference-link-lint.js](#17-reference-link-lintjs)
+18. [bare-url-lint.js](#18-bare-url-lintjs)
 
 ---
 
@@ -616,6 +617,41 @@ Exit `0` (clean), `1` (an undefined reference — or any warning under `--strict
 
 ### 📦 Reusable functions:
 Exports `normLabel`, `parseReferences`, and `checkFile` for use in your own tooling via `require()`.
+
+---
+
+## 18. `bare-url-lint.js`
+> **`see https://example.com.` links to `example.com.` — the trailing dot got swallowed. A bare URL is a bug waiting for a renderer that doesn't auto-link.**
+
+GitHub auto-links a raw URL, so `See https://example.com for details.` *renders* fine — and that's the trap. `link-check.js` tells you whether a URL resolves; this tells you it's written in a form that only works by luck. (markdownlint **MD034**.)
+
+Three reasons a bare URL is a latent bug, none of which a link checker sees:
+* **Auto-linking isn't universal.** GitHub does it; many Markdown renderers — and every plain-text reader — leave the URL as dead, unclickable text.
+* **No descriptive text.** A bare URL is the exact anti-pattern [`link-text-lint.js`](#15-link-text-lintjs) catches one step downstream — `https://…` can't say what it points to.
+* **Punctuation collisions.** A trailing `.` or `)` gets pulled into (or breaks) the auto-link, so `see https://example.com.` links to `example.com.` — a real, silent 404.
+
+The fix is always local: `<https://example.com>` for a deliberate autolink, or `[text](https://example.com)` to give it words.
+
+### ✅ What it *won't* false-positive on:
+* URLs already inside a link or image — `[text](url)`, `![alt](url)`, `<url>`.
+* URLs in a reference definition — `[label]: https://…` (that's [`reference-link-lint.js`](#17-reference-link-lintjs)'s job).
+* URLs in raw HTML attributes — `<a href="…">`, `<img src="…">`.
+* Anything inside ` ``` ` fences or `` `inline code` `` — documented example URLs don't trip it. Same fence/code-awareness as the rest of the suite.
+
+### 🚀 Usage:
+```bash
+# Check one file (or several)
+node bare-url-lint.js README.md docs/*.md
+
+# Machine-readable / quiet-on-success
+node bare-url-lint.js README.md --json
+node bare-url-lint.js README.md --quiet
+```
+
+Exit `0` (clean), `1` (a bare URL found), `2` (usage/read error).
+
+### 📦 Reusable functions:
+Exports `lintContent` and `protectedRanges` for use in your own tooling via `require()`.
 
 ---
 

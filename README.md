@@ -23,6 +23,7 @@ A curated collection of highly robust, custom-built Node/Python automation scrip
 16. [secret-scan.js](#16-secret-scanjs)
 17. [reference-link-lint.js](#17-reference-link-lintjs)
 18. [bare-url-lint.js](#18-bare-url-lintjs)
+19. [emphasis-heading-lint.js](#19-emphasis-heading-lintjs)
 
 ---
 
@@ -652,6 +653,44 @@ Exit `0` (clean), `1` (a bare URL found), `2` (usage/read error).
 
 ### 📦 Reusable functions:
 Exports `lintContent` and `protectedRanges` for use in your own tooling via `require()`.
+
+---
+
+## 19. `emphasis-heading-lint.js`
+> **`**Installation**` on its own line renders like a heading and is invisible to every tool that reads document outline — no anchor, no TOC entry, no screen-reader stop.**
+
+A whole line of bold (or italic) standing in for a section title *looks* right and is structurally nothing. `heading-lint.js` checks your real `#` headings; this catches the fake ones it can't see. (markdownlint **MD036**.)
+
+Three reasons a bold-line-as-heading is a latent bug:
+* **Invisible to structure.** It produces no `#`, so `markdown-toc.js` and `heading-lint.js` never see it, it gets no anchor, and nothing can link to it — to every outline tool, that section doesn't exist.
+* **Breaks accessibility.** Screen readers navigate by real headings; a bold paragraph is announced as ordinary text, so the section becomes un-navigable.
+* **Loses the level.** A real `##`/`###` carries depth; bold carries none, so the nesting the author meant is gone.
+
+The fix is almost always to promote it: `**Installation**` → `### Installation`, at whatever level fits the outline.
+
+### ✅ What it *won't* false-positive on:
+* Emphasis that's only *part* of a line — `This is **important** context`.
+* Emphasis ending in sentence punctuation — `**Warning!**`, `*See below:*` — that's an emphasized sentence, not a heading (set configurable via `--punctuation`).
+* Bold inside list items, blockquotes, or table rows — `- **Label:** …`, `> **Note**`, `| **cell** |`.
+* Anything inside ` ``` ` fenced code blocks. Same fence-awareness as the rest of the suite.
+
+### 🚀 Usage:
+```bash
+# Check one file (or several)
+node emphasis-heading-lint.js README.md docs/*.md
+
+# Machine-readable / quiet-on-success
+node emphasis-heading-lint.js README.md --json
+node emphasis-heading-lint.js README.md --quiet
+
+# Flag whole-line emphasis regardless of trailing punctuation
+node emphasis-heading-lint.js README.md --punctuation ""
+```
+
+Exit `0` (clean), `1` (a fake heading found), `2` (usage/read error).
+
+### 📦 Reusable functions:
+Exports `lintContent` and `wholeLineEmphasis` for use in your own tooling via `require()`.
 
 ---
 

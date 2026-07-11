@@ -14,6 +14,7 @@
 #   whitespace-lint.js   trailing spaces / tabs / CRLF / EOF newline (default: ON)
 #   reference-link-lint.js undefined [text][ref] / unused defs    (default: ON)
 #   bare-url-lint.js     raw URLs not wrapped in <> or [](). MD034 (default: ON)
+#   emphasis-heading-lint.js  whole-line bold/italic used as a heading. MD036 (default: ON)
 #   heading-lint.js      heading structure / duplicate anchors    (default: OFF — opt-in)
 #   table-fmt.js         GFM tables not aligned                    (default: OFF — opt-in)
 #   markdown-toc.js      <!-- TOC --> block out of date           (opt-in via TOC_FILES)
@@ -67,6 +68,7 @@ CHECK_LISTS="${CHECK_LISTS:-1}"
 CHECK_WHITESPACE="${CHECK_WHITESPACE:-1}"
 CHECK_REFS="${CHECK_REFS:-1}"
 CHECK_BARE_URL="${CHECK_BARE_URL:-1}"
+CHECK_EMPHASIS_HEADING="${CHECK_EMPHASIS_HEADING:-1}"
 CHECK_HEADINGS="${CHECK_HEADINGS:-0}"
 CHECK_TABLES="${CHECK_TABLES:-0}"
 
@@ -112,6 +114,7 @@ run_check "$CHECK_LISTS"       "lists (list-lint)"             list-lint.js
 run_check "$CHECK_WHITESPACE"  "whitespace (whitespace-lint)"  whitespace-lint.js
 run_check "$CHECK_REFS"        "reference links (reference-link-lint)" reference-link-lint.js
 run_check "$CHECK_BARE_URL"    "bare URLs (bare-url-lint)"      bare-url-lint.js
+run_check "$CHECK_EMPHASIS_HEADING" "emphasis-as-heading (emphasis-heading-lint)" emphasis-heading-lint.js
 run_check "$CHECK_HEADINGS"    "headings (heading-lint)"       heading-lint.js
 run_check "$CHECK_TABLES"      "tables (table-fmt --check)"    table-fmt.js --check
 

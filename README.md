@@ -24,6 +24,7 @@ A curated collection of highly robust, custom-built Node/Python automation scrip
 17. [reference-link-lint.js](#17-reference-link-lintjs)
 18. [bare-url-lint.js](#18-bare-url-lintjs)
 19. [emphasis-heading-lint.js](#19-emphasis-heading-lintjs)
+20. [atx-heading-space-lint.js](#20-atx-heading-space-lintjs)
 
 ---
 
@@ -694,6 +695,43 @@ Exports `lintContent` and `wholeLineEmphasis` for use in your own tooling via `r
 
 ---
 
+## 20. `atx-heading-space-lint.js`
+> **`##Setup` with no space after the hashes is not a heading — CommonMark renders it as literal text, so it gets no anchor, no TOC entry, and no screen-reader stop.**
+
+This is the mirror image of section 19: there, something that *isn't* a heading renders like one; here, something you *meant* as a heading silently renders as body text — because you forgot the space. CommonMark (and GitHub) require a space between the `#` run and the title. `heading-lint.js` and `markdown-toc.js` never see the botched one, because to them it isn't a heading at all. (markdownlint **MD018**; the cosmetic multiple-spaces case is **MD019**.)
+
+Two rules, both about the space after the opening `#`s:
+* **`##Setup`** → **MD018**, the real bug: renders as text, not a heading. Flagged as an error.
+* **`##&nbsp;&nbsp;Setup`** → **MD019**, cosmetic: still a heading, but the extra spaces are diff noise. On by default; silence with `--no-multiple-space` to check only the MD018 bug.
+
+### ✅ What it *won't* false-positive on:
+* Correctly-spaced headings (`## Setup`) and bare/empty ones (`##`, `###&nbsp;&nbsp;&nbsp;`).
+* Lines with 7+ hashes (`#######…`) — not a heading in CommonMark — and anything indented 4+ spaces (an indented code block).
+* A `#` in the *middle* of prose (`priced at #1`) — only line-opening hashes are heading candidates.
+* Anything inside ` ``` ` / ` ~~~ ` fenced blocks, so a `#define` or a `#!/bin/sh` shebang in an example is left alone. Same fence-awareness as the rest of the suite.
+
+**Heuristic caveat** (identical to markdownlint MD018): a non-heading prose line that genuinely opens with a hash — `#1 priority`, a bare `#hashtag` — *is* flagged, because it's indistinguishable from a botched heading and renders as literal text either way. Escape it (`\#1`) or fence it if you mean a literal hash; add the space if you mean a heading. Closed ATX (`## Setup ##`, MD020/MD021) is intentionally out of scope — it's rare, and a half-right detector is worse than none.
+
+### 🚀 Usage:
+```bash
+# Check one file (or several)
+node atx-heading-space-lint.js README.md docs/*.md
+
+# Machine-readable / quiet-on-success
+node atx-heading-space-lint.js README.md --json
+node atx-heading-space-lint.js README.md --quiet
+
+# Only the real bug (MD018), skip the cosmetic multiple-spaces rule
+node atx-heading-space-lint.js README.md --no-multiple-space
+```
+
+Exit `0` (clean), `1` (a spacing problem found), `2` (usage/read error).
+
+### 📦 Reusable functions:
+Exports `lintContent` and `classifyLine` for use in your own tooling via `require()`.
+
+---
+
 ## 🔁 Wire the docs checks into CI / pre-commit
 
 The linters are most useful when they run automatically — so docs rot fails a build instead of
@@ -714,14 +752,16 @@ bash examples/check-docs.sh
 # ✓ All docs checks passed.
 ```
 
-**Seven checks run by default** — `link-check`, `code-fence-lint`, `image-alt-lint`,
+**Eleven checks run by default** — `link-check`, `code-fence-lint`, `image-alt-lint`,
 `link-text-lint`, `frontmatter-lint` (`--allow-missing`, so plain docs pass and only files that
-*have* frontmatter get validated), `list-lint`, and `whitespace-lint`. These fail only on genuine
+*have* frontmatter get validated), `list-lint`, `whitespace-lint`, `reference-link-lint`,
+`bare-url-lint`, `emphasis-heading-lint`, and `atx-heading-space-lint`. These fail only on genuine
 defects: a dead link, an unclosed fence, a missing `alt`, an empty/whitespace link text, malformed
-frontmatter, a list that mixes bullet markers / botches its numbering, or trailing whitespace /
-hard tabs / CRLF / a missing final newline. (`list-lint`'s odd-indent, `whitespace-lint`'s
-multiple-blank-lines, and `link-text-lint`'s non-descriptive / raw-URL rules are non-failing
-warnings.)
+frontmatter, a list that mixes bullet markers / botches its numbering, trailing whitespace /
+hard tabs / CRLF / a missing final newline, an undefined `[text][ref]`, a bare URL, a whole line of
+bold used as a heading, or a `##Heading` that lost its space and stopped being one. (`list-lint`'s
+odd-indent, `whitespace-lint`'s multiple-blank-lines, and `link-text-lint`'s non-descriptive /
+raw-URL rules are non-failing warnings.)
 
 **Two checks are opt-in** — `heading-lint` and `table-fmt --check` — because they can flag
 deliberate style (repeated sub-headings across sections, hand-aligned tables), not bugs. Turn them

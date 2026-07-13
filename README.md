@@ -25,6 +25,7 @@ A curated collection of highly robust, custom-built Node/Python automation scrip
 18. [bare-url-lint.js](#18-bare-url-lintjs)
 19. [emphasis-heading-lint.js](#19-emphasis-heading-lintjs)
 20. [atx-heading-space-lint.js](#20-atx-heading-space-lintjs)
+21. [emphasis-marker-space-lint.js](#21-emphasis-marker-space-lintjs)
 
 ---
 
@@ -732,6 +733,46 @@ Exports `lintContent` and `classifyLine` for use in your own tooling via `requir
 
 ---
 
+## 21. `emphasis-marker-space-lint.js`
+> **`** text **` with a space just inside the markers is not bold — CommonMark needs the marker to hug its text, so the asterisks render literally and the emphasis silently vanishes.**
+
+This is the inverse of section 20's bug: there a *missing* space stops `##Setup` from being a heading; here an *extra* space stops `** text **` from being emphasis. A `**` only opens emphasis when it isn't followed by a space, and only closes when it isn't preceded by one. Put a space on the inside of either marker and the whole run stops being a delimiter — `** important **` comes out as the literal characters around the word, not as bold. Both mistakes are silent: the source looks right, the render is wrong, and no other linter in the suite notices. (markdownlint **MD037**.)
+
+The broken shapes it catches, for every marker (`**`, `__`, `*`, `_`):
+* `** text **` — space on both sides
+* `**text **` — space before the closing marker
+* `** text**` — space after the opening marker
+
+The fix is always to delete the inner space(s): `** text **` → `**text**`.
+
+### ✅ What it *won't* false-positive on:
+* Correct emphasis (`**bold**`, `_italic_`) — nothing to fix.
+* List bullets (`* item`, `- item`, `+ item`) — the leading marker is a bullet, not an emphasis opener.
+* Math, globs, and single-char spans (`2 * 3 * 4`, `a * b`, `rm *.tmp`) — a content guard requires the inner text to be a real word (≥ 2 chars with a letter), so numbers and lone variables are skipped.
+* `snake_case` and other intraword underscores — a boundary guard requires the char *outside* each marker to be a non-word char, so `my_var_name` is never touched.
+* Valid bold that wraps inline code (`**word `code`**`) — code spans are masked as content, not whitespace, so the masked code can't fake a broken inner space.
+* Spans containing another marker char (`**a *b* c**`) — left alone, precision over recall.
+* Anything inside ` ``` ` / ` ~~~ ` fences or `inline code`. Same fence-awareness as the rest of the suite.
+
+**Scope, honestly stated:** this flags a high-confidence single clean span per marker. `*` is wildly overloaded (bullets, multiplication, globs), so the detector deliberately errs toward silence — the repo's rule is that a half-right linter is worse than none.
+
+### 🚀 Usage:
+```bash
+# Check one file (or several)
+node emphasis-marker-space-lint.js README.md docs/*.md
+
+# Machine-readable / quiet-on-success
+node emphasis-marker-space-lint.js README.md --json
+node emphasis-marker-space-lint.js README.md --quiet
+```
+
+Exit `0` (clean), `1` (broken emphasis found), `2` (usage/read error).
+
+### 📦 Reusable functions:
+Exports `lintContent`, `maskInlineCode`, and `scanMarker` for use in your own tooling via `require()`.
+
+---
+
 ## 🔁 Wire the docs checks into CI / pre-commit
 
 The linters are most useful when they run automatically — so docs rot fails a build instead of
@@ -752,10 +793,10 @@ bash examples/check-docs.sh
 # ✓ All docs checks passed.
 ```
 
-**Eleven checks run by default** — `link-check`, `code-fence-lint`, `image-alt-lint`,
+**Twelve checks run by default** — `link-check`, `code-fence-lint`, `image-alt-lint`,
 `link-text-lint`, `frontmatter-lint` (`--allow-missing`, so plain docs pass and only files that
 *have* frontmatter get validated), `list-lint`, `whitespace-lint`, `reference-link-lint`,
-`bare-url-lint`, `emphasis-heading-lint`, and `atx-heading-space-lint`. These fail only on genuine
+`bare-url-lint`, `emphasis-heading-lint`, `atx-heading-space-lint`, and `emphasis-marker-space-lint`. These fail only on genuine
 defects: a dead link, an unclosed fence, a missing `alt`, an empty/whitespace link text, malformed
 frontmatter, a list that mixes bullet markers / botches its numbering, trailing whitespace /
 hard tabs / CRLF / a missing final newline, an undefined `[text][ref]`, a bare URL, a whole line of

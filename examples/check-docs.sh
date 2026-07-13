@@ -16,6 +16,7 @@
 #   bare-url-lint.js     raw URLs not wrapped in <> or [](). MD034 (default: ON)
 #   emphasis-heading-lint.js  whole-line bold/italic used as a heading. MD036 (default: ON)
 #   atx-heading-space-lint.js  `##Heading` w/ no space — not a heading. MD018/019 (default: ON)
+#   emphasis-marker-space-lint.js  `** text **` spaces inside markers — not bold. MD037 (default: ON)
 #   heading-lint.js      heading structure / duplicate anchors    (default: OFF — opt-in)
 #   table-fmt.js         GFM tables not aligned                    (default: OFF — opt-in)
 #   markdown-toc.js      <!-- TOC --> block out of date           (opt-in via TOC_FILES)
@@ -39,7 +40,8 @@
 # Every check is individually toggleable with an env var (1 = run, 0 = skip):
 #
 #   CHECK_LINKS CHECK_FENCES CHECK_ALT CHECK_LINK_TEXT CHECK_FRONTMATTER CHECK_LISTS
-#   CHECK_WHITESPACE CHECK_REFS CHECK_BARE_URL CHECK_HEADINGS CHECK_TABLES
+#   CHECK_WHITESPACE CHECK_REFS CHECK_BARE_URL CHECK_EMPHASIS_HEADING
+#   CHECK_ATX_HEADING_SPACE CHECK_EMPHASIS_MARKER CHECK_HEADINGS CHECK_TABLES
 #
 # Exit codes: 0 = everything passed, 1 = a check failed. Safe for CI and pre-commit.
 #
@@ -71,6 +73,7 @@ CHECK_REFS="${CHECK_REFS:-1}"
 CHECK_BARE_URL="${CHECK_BARE_URL:-1}"
 CHECK_EMPHASIS_HEADING="${CHECK_EMPHASIS_HEADING:-1}"
 CHECK_ATX_HEADING_SPACE="${CHECK_ATX_HEADING_SPACE:-1}"
+CHECK_EMPHASIS_MARKER="${CHECK_EMPHASIS_MARKER:-1}"
 CHECK_HEADINGS="${CHECK_HEADINGS:-0}"
 CHECK_TABLES="${CHECK_TABLES:-0}"
 
@@ -118,6 +121,7 @@ run_check "$CHECK_REFS"        "reference links (reference-link-lint)" reference
 run_check "$CHECK_BARE_URL"    "bare URLs (bare-url-lint)"      bare-url-lint.js
 run_check "$CHECK_EMPHASIS_HEADING" "emphasis-as-heading (emphasis-heading-lint)" emphasis-heading-lint.js
 run_check "$CHECK_ATX_HEADING_SPACE" "ATX heading spacing (atx-heading-space-lint)" atx-heading-space-lint.js
+run_check "$CHECK_EMPHASIS_MARKER" "emphasis marker spacing (emphasis-marker-space-lint)" emphasis-marker-space-lint.js
 run_check "$CHECK_HEADINGS"    "headings (heading-lint)"       heading-lint.js
 run_check "$CHECK_TABLES"      "tables (table-fmt --check)"    table-fmt.js --check
 

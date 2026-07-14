@@ -26,6 +26,7 @@ A curated collection of highly robust, custom-built Node/Python automation scrip
 19. [emphasis-heading-lint.js](#19-emphasis-heading-lintjs)
 20. [atx-heading-space-lint.js](#20-atx-heading-space-lintjs)
 21. [emphasis-marker-space-lint.js](#21-emphasis-marker-space-lintjs)
+22. [fence-blank-lines-lint.js](#22-fence-blank-lines-lintjs)
 
 ---
 
@@ -41,6 +42,7 @@ This script interfaces directly with the GitHub CLI (`gh`) and the GitHub GraphQ
 * **Progress Tracking**: Sets default and active statuses (`Done` / `In Progress`) for all cards.
 
 ### 🚀 Usage:
+
 ```bash
 # Grant project permissions if needed
 gh auth refresh -s project
@@ -62,6 +64,7 @@ This script is designed to run locally or as a daily automated GitHub Action. It
 * **Dynamic Stars Counting**: Automatically pulls public repo stats (e.g. stargazers count) and structures repositories dynamically between specified HTML hooks without touching hand-crafted sections.
 
 ### 🚀 Usage:
+
 ```bash
 # Execute sync manually
 node sync-profile-readme.js
@@ -80,6 +83,7 @@ A clean Python script to manage and query a standardized JSON database of open-s
 * **Self-Contained DB**: Stores logs locally at `~/.oss-contributor/log.json` for lightweight system-wide querying.
 
 ### 🚀 Usage:
+
 ```bash
 # Initialize tracking log
 python3 oss-contributor-log.py init
@@ -107,6 +111,7 @@ A zero-dependency Node script that reads a Markdown file, extracts its headings,
 * **Zero dependencies**: Pure Node `fs`. Nothing to install.
 
 ### 🚀 Usage:
+
 ```bash
 # Print a TOC to stdout (default: levels 2–4, skipping the H1 title)
 node markdown-toc.js README.md
@@ -142,6 +147,7 @@ A zero-dependency Node script that catches the two link failures README maintain
 * **Zero dependencies**: Pure Node `fs` + `path`.
 
 ### 🚀 Usage:
+
 ```bash
 # Check one file
 node link-check.js README.md
@@ -180,6 +186,7 @@ A zero-dependency Node script that lints the `---` frontmatter block at the top 
 * **Zero dependencies**: Pure Node `fs` + `path`. Network-free and deterministic.
 
 ### 🚀 Usage:
+
 ```bash
 # Lint one post
 node frontmatter-lint.js post.md
@@ -213,6 +220,7 @@ A zero-dependency Node script that lints the heading *structure* of Markdown fil
 * **Zero dependencies**: Pure Node `fs`. Network-free and deterministic.
 
 ### 🚀 Usage:
+
 ```bash
 # Lint one file
 node heading-lint.js README.md
@@ -249,6 +257,7 @@ A zero-dependency Node script that reformats GitHub-Flavored Markdown tables: it
 * **Zero dependencies**: Pure Node `fs`. Network-free and deterministic.
 
 ### 🚀 Usage:
+
 ```bash
 # Print a formatted copy to stdout
 node table-fmt.js README.md
@@ -286,6 +295,7 @@ A zero-dependency Node script that lints fenced code blocks in Markdown. Its hea
 * **Zero dependencies**: Pure Node `fs`. Network-free and deterministic.
 
 ### 🚀 Usage:
+
 ```bash
 # Lint one file
 node code-fence-lint.js README.md
@@ -326,6 +336,7 @@ A zero-dependency Node script that lints **image alt text** in Markdown and inli
 * **Zero dependencies**: Pure Node `fs`. Network-free and deterministic.
 
 ### 🚀 Usage:
+
 ```bash
 # Lint one file
 node image-alt-lint.js README.md
@@ -365,6 +376,7 @@ A zero-dependency Node script that lints **Markdown list consistency** — the c
 * **Zero dependencies**: Pure Node `fs`. Network-free and deterministic.
 
 ### 🚀 Usage:
+
 ```bash
 # Lint one file
 node list-lint.js README.md
@@ -405,6 +417,7 @@ A zero-dependency Node script that lints **git commit messages** against [Conven
 * **Zero dependencies**: pure Node `fs` + `git` for the `--range` mode. Network-free.
 
 ### 🚀 Usage:
+
 ```bash
 # As a commit-msg hook (.git/hooks/commit-msg):
 #   #!/bin/sh
@@ -453,6 +466,7 @@ A zero-dependency Node script that lints a `CHANGELOG.md` against the [Keep a Ch
 * **Zero dependencies**: pure Node `fs`. Network-free.
 
 ### 🚀 Usage:
+
 ```bash
 # Lint the changelog
 node changelog-lint.js CHANGELOG.md
@@ -491,6 +505,7 @@ A zero-dependency Node script that lints (and repairs) whitespace *hygiene* in a
 * **Zero dependencies**: pure Node `fs`. Network-free.
 
 ### 🚀 Usage:
+
 ```bash
 # Lint one or many files
 node whitespace-lint.js README.md
@@ -529,6 +544,7 @@ A zero-dependency Node script that lints **link text** in Markdown and inline HT
 * **Zero dependencies**: Pure Node `fs`. Network-free and deterministic.
 
 ### 🚀 Usage:
+
 ```bash
 # Lint one file
 node link-text-lint.js README.md
@@ -566,6 +582,7 @@ A zero-dependency Node scanner for hardcoded secrets — API keys, tokens, priva
 * **Zero dependencies**: Pure Node `fs`/`path`. Deterministic, network-free.
 
 ### 🚀 Usage:
+
 ```bash
 # Scan a whole tree
 node secret-scan.js .
@@ -604,6 +621,7 @@ Markdown has two link syntaxes. Inline — `[text](url)` — is what `link-check
 * **A definition used only by a shortcut.** `[home]` in prose counts as using `[home]:` — it won't be flagged unused.
 
 ### 🚀 Usage:
+
 ```bash
 # Check one file (or several)
 node reference-link-lint.js README.md docs/*.md
@@ -642,6 +660,7 @@ The fix is always local: `<https://example.com>` for a deliberate autolink, or `
 * Anything inside ` ``` ` fences or `` `inline code` `` — documented example URLs don't trip it. Same fence/code-awareness as the rest of the suite.
 
 ### 🚀 Usage:
+
 ```bash
 # Check one file (or several)
 node bare-url-lint.js README.md docs/*.md
@@ -677,6 +696,7 @@ The fix is almost always to promote it: `**Installation**` → `### Installation
 * Anything inside ` ``` ` fenced code blocks. Same fence-awareness as the rest of the suite.
 
 ### 🚀 Usage:
+
 ```bash
 # Check one file (or several)
 node emphasis-heading-lint.js README.md docs/*.md
@@ -714,6 +734,7 @@ Two rules, both about the space after the opening `#`s:
 **Heuristic caveat** (identical to markdownlint MD018): a non-heading prose line that genuinely opens with a hash — `#1 priority`, a bare `#hashtag` — *is* flagged, because it's indistinguishable from a botched heading and renders as literal text either way. Escape it (`\#1`) or fence it if you mean a literal hash; add the space if you mean a heading. Closed ATX (`## Setup ##`, MD020/MD021) is intentionally out of scope — it's rare, and a half-right detector is worse than none.
 
 ### 🚀 Usage:
+
 ```bash
 # Check one file (or several)
 node atx-heading-space-lint.js README.md docs/*.md
@@ -757,6 +778,7 @@ The fix is always to delete the inner space(s): `** text **` → `**text**`.
 **Scope, honestly stated:** this flags a high-confidence single clean span per marker. `*` is wildly overloaded (bullets, multiplication, globs), so the detector deliberately errs toward silence — the repo's rule is that a half-right linter is worse than none.
 
 ### 🚀 Usage:
+
 ```bash
 # Check one file (or several)
 node emphasis-marker-space-lint.js README.md docs/*.md
@@ -770,6 +792,49 @@ Exit `0` (clean), `1` (broken emphasis found), `2` (usage/read error).
 
 ### 📦 Reusable functions:
 Exports `lintContent`, `maskInlineCode`, and `scanMarker` for use in your own tooling via `require()`.
+
+---
+
+## 22. `fence-blank-lines-lint.js`
+> **A fenced code block glued to the paragraph above or below it can render as part of that paragraph — or fail to open at all — in strict Markdown parsers. It needs a blank line on each side.**
+
+GitHub is lenient, so this one hides: a fence with no blank line before or after it usually looks fine on github.com and breaks somewhere else — a static-site generator, a docs pipeline, a stricter renderer. The block merges into the surrounding text, the language hint gets dropped, or the code never fences at all. This is markdownlint **MD031** ("fenced code blocks should be surrounded by blank lines").
+
+It's a **different check** from section 9's `code-fence-lint.js`. That one inspects the fence itself — is it closed, does it name a language. This one ignores what's inside the fence and only reads the two lines that bracket it. A fence can be perfectly closed *and* glued to its neighbours; you want both linters.
+
+Two findings, both MD031:
+* **missing-blank-before** — text sits directly above the opening ` ``` ` / `~~~`
+* **missing-blank-after** — text sits directly below the closing fence
+
+### ✅ What it *won't* false-positive on:
+* A fence at the very **start** of a file (nothing above it needs spacing) or the very **end** (nothing below). Both are correct.
+* Fences already separated by a blank line — nothing to do.
+* A stray ` ``` ` **inside** a fenced block — it's code content, not a new fence. The outer marker pair is tracked (backtick vs tilde), so an inner marker of the other type is never mistaken for a fence boundary.
+* Indented (4-space) code blocks — a different construct, deliberately out of scope.
+
+**Scope, honestly stated:** MD032 (blank lines around *lists*) is **not** covered here. List nesting and continuation lines make a half-right list detector worse than none — this file does one rule correctly, the same discipline the rest of the suite follows.
+
+### 🔧 `--fix`
+Inserts **exactly one** blank line wherever one is missing — never more — and leaves already-spaced fences untouched. It's idempotent: run it twice and the second run changes nothing.
+
+### 🚀 Usage:
+
+```bash
+# Check one file (or several)
+node fence-blank-lines-lint.js README.md docs/*.md
+
+# Insert the missing blank lines in place
+node fence-blank-lines-lint.js README.md --fix
+
+# Machine-readable / quiet-on-success
+node fence-blank-lines-lint.js README.md --json
+node fence-blank-lines-lint.js README.md --quiet
+```
+
+Exit `0` (clean, or all fixed), `1` (problems found without `--fix`), `2` (usage/read/write error).
+
+### 📦 Reusable functions:
+Exports `lintContent`, `fixContent`, and `fenceMarkerChar` for use in your own tooling via `require()`.
 
 ---
 

@@ -18,15 +18,18 @@
 #   atx-heading-space-lint.js  `##Heading` w/ no space — not a heading. MD018/019 (default: ON)
 #   emphasis-marker-space-lint.js  `** text **` spaces inside markers — not bold. MD037 (default: ON)
 #   heading-lint.js      heading structure / duplicate anchors    (default: OFF — opt-in)
+#   heading-punctuation-lint.js  headings ending in . , ; : ! MD026 (default: OFF — opt-in)
 #   table-fmt.js         GFM tables not aligned                    (default: OFF — opt-in)
 #   markdown-toc.js      <!-- TOC --> block out of date           (opt-in via TOC_FILES)
 #   changelog-lint.js    CHANGELOG.md not Keep-a-Changelog shape   (auto: ON when a
 #                                                                   CHANGELOG.md exists)
 #
-# Why some are OFF by default: heading-lint flags duplicate heading *slugs*, and
-# table-fmt enforces one specific alignment — both are legitimate, but a repo can
-# reasonably repeat sub-headings across sections or hand-format its tables. Those
-# checks fail on style choices, not bugs, so they're opt-in. The seven ON-by-default
+# Why some are OFF by default: heading-lint flags duplicate heading *slugs*,
+# table-fmt enforces one specific alignment, and heading-punctuation-lint flags a
+# trailing `:`/`.` on a heading — all legitimate, but a repo can reasonably repeat
+# sub-headings across sections, hand-format its tables, or deliberately end a heading
+# in `:` (e.g. a "Steps:" label before a list). Those checks fail on style choices,
+# not bugs, so they're opt-in. The seven ON-by-default
 # checks only fail on genuine defects (a dead link, an unclosed fence, a missing
 # alt attribute, an empty/whitespace link text, malformed frontmatter, a list that
 # mixes bullet markers or botches its numbering, trailing whitespace / hard tabs /
@@ -41,7 +44,8 @@
 #
 #   CHECK_LINKS CHECK_FENCES CHECK_ALT CHECK_LINK_TEXT CHECK_FRONTMATTER CHECK_LISTS
 #   CHECK_WHITESPACE CHECK_REFS CHECK_BARE_URL CHECK_EMPHASIS_HEADING
-#   CHECK_ATX_HEADING_SPACE CHECK_EMPHASIS_MARKER CHECK_HEADINGS CHECK_TABLES
+#   CHECK_ATX_HEADING_SPACE CHECK_EMPHASIS_MARKER CHECK_HEADINGS
+#   CHECK_HEADING_PUNCT CHECK_TABLES
 #
 # Exit codes: 0 = everything passed, 1 = a check failed. Safe for CI and pre-commit.
 #
@@ -75,6 +79,7 @@ CHECK_EMPHASIS_HEADING="${CHECK_EMPHASIS_HEADING:-1}"
 CHECK_ATX_HEADING_SPACE="${CHECK_ATX_HEADING_SPACE:-1}"
 CHECK_EMPHASIS_MARKER="${CHECK_EMPHASIS_MARKER:-1}"
 CHECK_HEADINGS="${CHECK_HEADINGS:-0}"
+CHECK_HEADING_PUNCT="${CHECK_HEADING_PUNCT:-0}"
 CHECK_TABLES="${CHECK_TABLES:-0}"
 
 # Files with <!-- TOC --> markers whose TOC should be verified. Space-separated.
@@ -123,6 +128,7 @@ run_check "$CHECK_EMPHASIS_HEADING" "emphasis-as-heading (emphasis-heading-lint)
 run_check "$CHECK_ATX_HEADING_SPACE" "ATX heading spacing (atx-heading-space-lint)" atx-heading-space-lint.js
 run_check "$CHECK_EMPHASIS_MARKER" "emphasis marker spacing (emphasis-marker-space-lint)" emphasis-marker-space-lint.js
 run_check "$CHECK_HEADINGS"    "headings (heading-lint)"       heading-lint.js
+run_check "$CHECK_HEADING_PUNCT" "heading punctuation (heading-punctuation-lint)" heading-punctuation-lint.js
 run_check "$CHECK_TABLES"      "tables (table-fmt --check)"    table-fmt.js --check
 
 # Opt-in TOC freshness check (per-file, only for files that use TOC markers).

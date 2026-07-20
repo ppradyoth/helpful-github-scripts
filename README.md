@@ -27,6 +27,7 @@ A curated collection of highly robust, custom-built Node/Python automation scrip
 20. [atx-heading-space-lint.js](#20-atx-heading-space-lintjs)
 21. [emphasis-marker-space-lint.js](#21-emphasis-marker-space-lintjs)
 22. [fence-blank-lines-lint.js](#22-fence-blank-lines-lintjs)
+23. [heading-punctuation-lint.js](#23-heading-punctuation-lintjs)
 
 ---
 
@@ -835,6 +836,52 @@ Exit `0` (clean, or all fixed), `1` (problems found without `--fix`), `2` (usage
 
 ### 📦 Reusable functions:
 Exports `lintContent`, `fixContent`, and `fenceMarkerChar` for use in your own tooling via `require()`.
+
+---
+
+## 23. `heading-punctuation-lint.js`
+> **A heading is a label, not a sentence. A trailing `.` / `,` / `:` / `;` / `!` on a heading is the tell of prose that got promoted to a heading — and it rides into your table of contents, your browser tab, and the generated `#anchor` slug.**
+
+It still renders, so nothing looks broken — which is why it drifts in. But `## Installation:` and `### Don't do this.` read wrong and slug wrong, and no other linter in the suite looks at the *last* character of the heading text. This is markdownlint **MD026** ("trailing punctuation in heading").
+
+It's a **different check** from the other heading linters: `heading-lint.js` (section 12) reads heading *structure* (duplicate/skipped/empty), `atx-heading-space-lint.js` (section 20) reads the *space after the `#`s*. This one reads only the final character of the text.
+
+One rule, MD026 — and the exemption that matters:
+* A heading ending in `. , ; : !` (and the full-width CJK forms `。，；：！`) is flagged.
+* A trailing **`?` is allowed** — `## Why jugaad?` is a legitimate heading, so `?`/`？` are deliberately out of the set (same default as markdownlint).
+
+### ✅ What it *won't* false-positive on:
+* Question headings (`## Why jugaad?`) and correct headings (`## Installation`).
+* `##Installation:` — that's not a heading at all (no space after the `#`s). It's section 20's MD018 to catch, not this one's.
+* A punctuation-only "heading" (`# !!!`) — no word to strip from, so it's left alone.
+* The closed form `## Heading. ##` **is** caught — the trailing `#`s are stripped before the last character is read, so the `.` before them is still flagged, and `--fix` preserves the closing `#`s.
+* Anything inside a ` ``` ` / `~~~` fenced block — a commented `# TODO:` in an example is left alone. Fence-aware like the rest of the suite.
+
+**Scope, honestly stated:** Setext headings (text underlined with `===` / `---`) are **not** covered — reliably telling a `---` underline from a thematic break or a list is where a half-right detector does more harm than good. ATX is where this bites; that's what it does, correctly.
+
+### 🔧 `--fix`
+Strips the trailing run of punctuation from each flagged heading, preserving indentation and any closing `#`s and inserting nothing. Idempotent: run it twice and the second run changes nothing.
+
+### 🚀 Usage:
+
+```bash
+# Check one file (or several)
+node heading-punctuation-lint.js README.md docs/*.md
+
+# Strip the trailing punctuation in place
+node heading-punctuation-lint.js README.md --fix
+
+# Machine-readable / quiet-on-success
+node heading-punctuation-lint.js README.md --json
+node heading-punctuation-lint.js README.md --quiet
+```
+
+It ships **OFF by default** in `check-docs.sh` (opt in with `CHECK_HEADING_PUNCT=1`), alongside `heading-lint` and `table-fmt` — a repo may legitimately end a heading in `:` (a `Steps:` label before a list), so this is a style check, not a defect gate.
+
+Exit `0` (clean, or all fixed), `1` (problems found without `--fix`), `2` (usage/read/write error).
+
+### 📦 Reusable functions:
+Exports `lintContent`, `fixContent`, `classifyLine`, `fixLine`, and `PUNCTUATION` for use in your own tooling via `require()`.
 
 ---
 

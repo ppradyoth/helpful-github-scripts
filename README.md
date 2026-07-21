@@ -28,6 +28,7 @@ A curated collection of highly robust, custom-built Node/Python automation scrip
 21. [emphasis-marker-space-lint.js](#21-emphasis-marker-space-lintjs)
 22. [fence-blank-lines-lint.js](#22-fence-blank-lines-lintjs)
 23. [heading-punctuation-lint.js](#23-heading-punctuation-lintjs)
+24. [fence-language-lint.js](#24-fence-language-lintjs)
 
 ---
 
@@ -882,6 +883,48 @@ Exit `0` (clean, or all fixed), `1` (problems found without `--fix`), `2` (usage
 
 ### 📦 Reusable functions:
 Exports `lintContent`, `fixContent`, `classifyLine`, `fixLine`, and `PUNCTUATION` for use in your own tooling via `require()`.
+
+---
+
+## 24. `fence-language-lint.js`
+> **A bare ` ``` ` fence renders — with no syntax highlighting and no language hint for a screen reader. Tag it `` ```bash `` and both problems go away.**
+
+An opening code fence with nothing after the marker leaves the block untyped. GitHub still shows it, so it looks fine, which is exactly why it slips in. This is markdownlint **MD040** ("fenced code blocks should have a language specified").
+
+It's the **third, non-overlapping** fence check in the suite:
+* `code-fence-lint.js` (section 13) — is the fence *closed / well-formed*?
+* `fence-blank-lines-lint.js` (section 22) — is it *surrounded by blank lines* (MD031)?
+* `fence-language-lint.js` — does the opening fence *name a language* (MD040)?
+
+A fence can be perfectly closed and correctly spaced and still be bare. Run all three.
+
+### ✅ What it *won't* false-positive on:
+* **Closing fences.** A closing ` ``` ` legitimately has no info string; only the *opening* fence is judged.
+* Indented (4-space) code blocks — there's no fence to carry a language.
+* Backtick fences whose "info string" contains a backtick — that's a paragraph with inline code, not a fence opener (CommonMark), so it's skipped.
+* Tilde fences (`~~~`) are handled the same as backtick fences.
+* `` ```{.python} `` pandoc-style attributes count as a declared language — the rule checks that *something* is there, not that it's a real Linguist name.
+
+### 🚫 No `--fix` — on purpose
+A missing language **can't be inferred safely**. The block could be `bash`, `text`, `json`, or a `diff`, and stamping the wrong tag is *worse* than leaving it bare — it mis-highlights *and* misleads a screen reader. The fix is a human picking the right tag. This linter finds them; it won't guess.
+
+### 🚀 Usage:
+
+```bash
+# Check one file (or several)
+node fence-language-lint.js README.md docs/*.md
+
+# Machine-readable / quiet-on-success
+node fence-language-lint.js README.md --json
+node fence-language-lint.js README.md --quiet
+```
+
+It ships **OFF by default** in `check-docs.sh` (opt in with `CHECK_FENCE_LANG=1`), alongside `heading-lint`, `heading-punctuation-lint`, and `table-fmt` — a plain command-output or ASCII-art block can legitimately have no language, so this is a style/consistency check, not a defect gate.
+
+Exit `0` (clean), `1` (bare fences found), `2` (usage/read error).
+
+### 📦 Reusable functions:
+Exports `lintContent` and `parseFence` for use in your own tooling via `require()`.
 
 ---
 
